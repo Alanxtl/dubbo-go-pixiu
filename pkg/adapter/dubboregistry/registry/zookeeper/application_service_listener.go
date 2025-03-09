@@ -32,29 +32,29 @@ import (
 	dr "dubbo.apache.org/dubbo-go/v3/registry"
 	"dubbo.apache.org/dubbo-go/v3/registry/servicediscovery"
 	"dubbo.apache.org/dubbo-go/v3/remoting/zookeeper/curator_discovery"
+	"github.com/dubbo-go-pixiu/pixiu-api/pkg/api/config"
+	"github.com/dubbogo/go-zookeeper/zk"
+)
 
+import (
 	"github.com/apache/dubbo-go-pixiu/pkg/adapter/dubboregistry/common"
 	"github.com/apache/dubbo-go-pixiu/pkg/adapter/dubboregistry/registry"
 	"github.com/apache/dubbo-go-pixiu/pkg/adapter/dubboregistry/remoting/zookeeper"
 	"github.com/apache/dubbo-go-pixiu/pkg/common/constant"
 	"github.com/apache/dubbo-go-pixiu/pkg/logger"
-
-	"github.com/dubbo-go-pixiu/pixiu-api/pkg/api/config"
-
-	"github.com/dubbogo/go-zookeeper/zk"
 )
 
 var _ registry.Listener = new(applicationServiceListener)
 
 // applicationServiceListener normally monitors the /services/[:application]
 type applicationServiceListener struct {
-	urls            []*dubboCommon.URL
-	servicePath     string
-	client          *zookeeper.ZooKeeperClient
-	adapterListener common.RegistryEventListener
+	urls        []*dubboCommon.URL
+	servicePath string
+	client      *zookeeper.ZooKeeperClient
 
-	exit chan struct{}
-	wg   sync.WaitGroup
+	exit            chan struct{}
+	wg              sync.WaitGroup
+	adapterListener common.RegistryEventListener
 }
 
 // newApplicationServiceListener creates a new zk service listener
@@ -69,7 +69,6 @@ func newApplicationServiceListener(path string, client *zookeeper.ZooKeeperClien
 
 func (asl *applicationServiceListener) WatchAndHandle() {
 	defer asl.wg.Done()
-
 	var (
 		failTimes  int64 = 0
 		delayTimer       = time.NewTimer(ConnDelay * time.Duration(failTimes))
@@ -77,7 +76,6 @@ func (asl *applicationServiceListener) WatchAndHandle() {
 	defer delayTimer.Stop()
 	for {
 		children, e, err := asl.client.GetChildrenW(asl.servicePath)
-		// error handling
 		if err != nil {
 			failTimes++
 			logger.Infof("watching (path{%s}) = error{%v}", asl.servicePath, err)

@@ -18,16 +18,12 @@
 package nacos
 
 import (
-	"bytes"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 )
 
 import (
-	dubboCommon "dubbo.apache.org/dubbo-go/v3/common"
-	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 )
@@ -40,14 +36,9 @@ import (
 	"github.com/apache/dubbo-go-pixiu/pkg/model"
 )
 
-const (
-	MaxFailTimes = 2
-	ConnDelay    = 3 * time.Second
-)
+var _ registry.Listener = new(nacosAppListener)
 
-var _ registry.Listener = new(nacosIntfListener)
-
-type nacosIntfListener struct {
+type nacosAppListener struct {
 	exit            chan struct{}
 	client          naming_client.INamingClient
 	regConf         *model.Registry
@@ -55,33 +46,33 @@ type nacosIntfListener struct {
 	wg              sync.WaitGroup
 	addr            string
 	adapterListener common2.RegistryEventListener
-	serviceInfoMap  map[string]*serviceInfo
+	appInfoMap      map[string]*applicationInfo
 }
 
-// newNacosIntfListener returns a new nacosIntfListener with pre-defined path according to the registered type.
-func newNacosIntfListener(client naming_client.INamingClient, reg *NacosRegistry, regConf *model.Registry, adapterListener common2.RegistryEventListener) registry.Listener {
-	return &nacosIntfListener{
+// newNacosAppListener returns a new nacosAppListener with pre-defined path according to the registered type.
+func newNacosAppListener(client naming_client.INamingClient, reg *NacosRegistry, regConf *model.Registry, adapterListener common2.RegistryEventListener) registry.Listener {
+	return &nacosAppListener{
 		exit:            make(chan struct{}),
 		client:          client,
 		regConf:         regConf,
 		reg:             reg,
 		addr:            regConf.Address,
 		adapterListener: adapterListener,
-		serviceInfoMap:  map[string]*serviceInfo{},
+		appInfoMap:      map[string]*applicationInfo{},
 	}
 }
 
-func (n *nacosIntfListener) Close() {
+func (n *nacosAppListener) Close() {
 	close(n.exit)
 	n.wg.Wait()
 }
 
-func (n *nacosIntfListener) WatchAndHandle() {
+func (n *nacosAppListener) WatchAndHandle() {
 	n.wg.Add(1)
 	go n.watch()
 }
 
-func (n *nacosIntfListener) watch() {
+func (n *nacosAppListener) watch() {
 	defer n.wg.Done()
 	var (
 		failTimes  int64 = 0
@@ -94,11 +85,11 @@ func (n *nacosIntfListener) watch() {
 			NameSpace: n.regConf.Namespace,
 			PageSize:  100,
 		})
-		// error handling
 		if err != nil {
 			failTimes++
 			logger.Infof("watching nacos interface with error{%v}", err)
 			// Exit the watch if root node is in error
+			// TODO: do not use zookeeper error
 			if err == zookeeper.ErrNilNode {
 				logger.Errorf("watching nacos services got errNilNode,so exit listen")
 				return
@@ -119,54 +110,47 @@ func (n *nacosIntfListener) watch() {
 	}
 }
 
-type serviceInfo struct {
-	interfaceName string
-	version       string
-	group         string
-	listener      *serviceListener
+type applicationInfo struct {
+	appName  string
+	listener *appServiceListener
 }
 
-func (s *serviceInfo) String() string {
-	return fmt.Sprintf("%s:%s:%s", s.interfaceName, s.version, s.group)
+func (a *applicationInfo) String() string {
+	return a.appName
 }
 
-func fromServiceFullKey(fullKey string) *serviceInfo {
-	serviceInfoStrs := strings.Split(fullKey, ":")
-	if len(serviceInfoStrs) != 4 {
+func fromServiceKey(serviceKey string) *applicationInfo {
+	// if serviceKey contains ":" means it is a interface registry
+	// we should ignore it
+	if strings.Contains(serviceKey, ":") {
 		return nil
 	}
-	return &serviceInfo{
-		interfaceName: serviceInfoStrs[1],
-		version:       serviceInfoStrs[2],
-		group:         serviceInfoStrs[3],
+	return &applicationInfo{
+		appName: serviceKey,
 	}
 }
 
-func (n *nacosIntfListener) updateServiceList(serviceList []string) error {
+func (n *nacosAppListener) updateServiceList(serviceList []string) error {
 	// add new service info and watch
-	newServiceMap := make(map[string]struct{})
+	newServiceMap := make(map[string]struct{}, len(serviceList))
 
 	for _, v := range serviceList {
-		svcInfo := fromServiceFullKey(v)
-		if svcInfo == nil {
-			// invalid nacos dubbo service key
+		appInfo := fromServiceKey(v)
+		if appInfo == nil {
+			// ignore interface registry
 			continue
 		}
-		key := svcInfo.String()
+		key := appInfo.String()
 		newServiceMap[key] = struct{}{}
-		if _, ok := n.serviceInfoMap[key]; !ok {
-			url, _ := dubboCommon.NewURL("mock://localhost:8848")
-			url.SetParam(constant.InterfaceKey, svcInfo.interfaceName)
-			url.SetParam(constant.GroupKey, svcInfo.group)
-			url.SetParam(constant.VersionKey, svcInfo.version)
-			l := newNacosSrvListener(url, n.client, n.adapterListener)
+		if _, ok := n.appInfoMap[key]; !ok {
+			l := newNacosAppSrvListener(n.client, n.adapterListener)
 			l.wg.Add(1)
 
-			svcInfo.listener = l
-			n.serviceInfoMap[key] = svcInfo
+			appInfo.listener = l
+			n.appInfoMap[key] = appInfo
 
 			sub := &vo.SubscribeParam{
-				ServiceName:       getSubscribeName(url),
+				ServiceName:       appInfo.appName,
 				SubscribeCallback: l.Callback,
 				GroupName:         n.regConf.Group,
 			}
@@ -179,29 +163,12 @@ func (n *nacosIntfListener) updateServiceList(serviceList []string) error {
 	}
 
 	// handle deleted service
-	for k, v := range n.serviceInfoMap {
+	for k, v := range n.appInfoMap {
 		if _, ok := newServiceMap[k]; !ok {
-			delete(n.serviceInfoMap, k)
+			delete(n.appInfoMap, k)
 			v.listener.Close()
 		}
 	}
 
 	return nil
-}
-
-func getSubscribeName(url *dubboCommon.URL) string {
-	var buffer bytes.Buffer
-	buffer.Write([]byte(dubboCommon.DubboNodes[dubboCommon.PROVIDER]))
-	appendParam(&buffer, url, constant.InterfaceKey)
-	appendParam(&buffer, url, constant.VersionKey)
-	appendParam(&buffer, url, constant.GroupKey)
-	return buffer.String()
-}
-
-func appendParam(target *bytes.Buffer, url *dubboCommon.URL, key string) {
-	value := url.GetParam(key, "")
-	target.Write([]byte(constant.NacosServiceNameSeparator))
-	if strings.TrimSpace(value) != "" {
-		target.Write([]byte(value))
-	}
 }
