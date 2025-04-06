@@ -26,6 +26,7 @@ import (
 
 import (
 	"github.com/pkg/errors"
+
 	"go.opentelemetry.io/otel"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
@@ -107,6 +108,7 @@ func (dc *Client) Call(req *client.Request) (resp interface{}, err error) {
 	newReq.Header = params.Header
 	httpClient := &http.Client{Timeout: req.Timeout}
 
+	// Observability
 	tr := otel.Tracer(traceNameHTTPClient)
 	_, span := tr.Start(req.Context, "HTTP "+newReq.Method, trace.WithSpanKind(trace.SpanKindClient))
 	trace.SpanFromContext(req.Context).SpanContext()
@@ -116,9 +118,14 @@ func (dc *Client) Call(req *client.Request) (resp interface{}, err error) {
 	newReq.Header.Set(jaegerTraceIDInHeader, span.SpanContext().TraceID().String())
 	defer span.End()
 
+	// Real request
 	tmpRet, err := httpClient.Do(newReq)
 	if tmpRet != nil {
 		span.SetAttributes(semconv.HTTPStatusCodeKey.Int(tmpRet.StatusCode))
+		if isSSEStream(tmpRet) {
+			// return a SSE Reader, read stream by caller
+			return NewSSEReader(tmpRet.Body), nil
+		}
 	}
 	if err != nil {
 		span.AddEvent(semconv.ExceptionEventName, trace.WithAttributes(semconv.ExceptionMessageKey.String(err.Error())))

@@ -32,6 +32,7 @@ import (
 
 import (
 	"github.com/apache/dubbo-go-pixiu/pkg/client"
+	"github.com/apache/dubbo-go-pixiu/pkg/client/http"
 	"github.com/apache/dubbo-go-pixiu/pkg/common/constant"
 	"github.com/apache/dubbo-go-pixiu/pkg/common/extension/filter"
 	router2 "github.com/apache/dubbo-go-pixiu/pkg/common/router"
@@ -107,16 +108,26 @@ func (hcm *HttpConnectionManager) handleHTTPRequest(c *pch.HttpContext) {
 	//todo timeout
 	filterChain.OnDecode(c)
 	hcm.buildTargetResponse(c)
-	filterChain.OnEncode(c)
+	//todo: stream resp has to set HTTP Server's WriteTimeout to 0, need to check it
+	if !c.IsStreaming {
+		filterChain.OnEncode(c)
+	}
 	hcm.writeResponse(c)
 }
 
 func (hcm *HttpConnectionManager) writeResponse(c *pch.HttpContext) {
+	if c.IsStreaming {
+		// resp has been handled in goroutine
+		return
+	}
+
 	if !c.LocalReply() {
-		writer := c.Writer
-		writer.WriteHeader(c.GetStatusCode())
-		if _, err := writer.Write(c.TargetResp.Data); err != nil {
-			logger.Errorf("write response error: %s", err)
+		c.Writer.WriteHeader(c.GetStatusCode())
+		if c.TargetResp != nil && c.TargetResp.Data != nil {
+			_, err := c.Writer.Write(c.TargetResp.Data)
+			if err != nil {
+				logger.Errorf("Write response failed: %v", err)
+			}
 		}
 	}
 }
@@ -150,6 +161,63 @@ func (hcm *HttpConnectionManager) buildTargetResponse(c *pch.HttpContext) {
 			c.AddHeader(constant.HeaderKeyContextType, constant.HeaderValueTextPlain)
 		}
 		c.TargetResp = &client.Response{Data: res}
+	case *http.SSEReader:
+		// response is sse stream
+		c.IsStreaming = true
+
+		c.StatusCode(stdHttp.StatusOK)
+		c.AddHeader(constant.HeaderKeyContextType, constant.HeaderValueTextEventStream)
+		c.AddHeader(constant.HeaderKeyCacheControl, constant.HeaderValueNoCache)
+		c.AddHeader(constant.HeaderKeyConnection, constant.HeaderValueKeepAlive)
+
+		// must support Flusher
+		flusher, ok := c.Writer.(stdHttp.Flusher)
+		if !ok {
+			logger.Error("ResponseWriter does not support Flusher")
+			c.SendLocalReply(stdHttp.StatusInternalServerError, []byte("Server does not support streaming"))
+			return
+		}
+
+		// handle sse stream
+		go func() {
+			defer func(res *http.SSEReader) {
+				err := res.Close()
+				if err != nil {
+					logger.Errorf("failed to close SSE stream: %v", err)
+				}
+			}(res)
+			for {
+				select {
+				case event := <-res.Events():
+					if event.Event != "" {
+						_, err := fmt.Fprintf(c.Writer, "event: %s\n", event.Event)
+						if err != nil {
+							logger.Errorf("failed to write event: %v", err)
+							return
+						}
+					}
+					if event.ID != "" {
+						_, err := fmt.Fprintf(c.Writer, "id: %s\n", event.ID)
+						if err != nil {
+							logger.Errorf("failed to write id: %v", err)
+							return
+						}
+					}
+					_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", event.Data)
+					if err != nil {
+						logger.Errorf("failed to write data: %v", err)
+						return
+					}
+					flusher.Flush() // flush immediately
+
+				case err := <-res.Err():
+					if err != nil && err != io.EOF {
+						logger.Errorf("SSE stream error: %v", err)
+					}
+					return
+				}
+			}
+		}()
 	default:
 		//dubbo go generic invoke
 		response := util.NewDubboResponse(res, false)
