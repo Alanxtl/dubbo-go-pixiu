@@ -128,7 +128,7 @@ func (f *Filter) Encode(c *http.HttpContext) filter.FilterStatus {
 		sizeRequest.Add(c.Ctx, int64(size), commonAttrs...)
 	}
 
-	size, err = computeApproximateResponseSize(c.TargetResp)
+	size, err = computeApproximateResponseSize(c.TargetResp.(*client.ByteResponse))
 	if err != nil {
 		logger.Warn("can not compute response size", err)
 	} else {
