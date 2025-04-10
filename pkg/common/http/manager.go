@@ -109,25 +109,87 @@ func (hcm *HttpConnectionManager) handleHTTPRequest(c *pch.HttpContext) {
 	filterChain.OnDecode(c)
 	hcm.buildTargetResponse(c)
 	//todo: stream resp has to set HTTP Server's WriteTimeout to 0, need to check it
-	if !c.IsStreaming {
-		filterChain.OnEncode(c)
-	}
+	//todo: stream resp ignores OnEncode stage
+	filterChain.OnEncode(c)
 	hcm.writeResponse(c)
 }
 
 func (hcm *HttpConnectionManager) writeResponse(c *pch.HttpContext) {
-	if c.IsStreaming {
-		// resp has been handled in goroutine
-		return
-	}
-
 	if !c.LocalReply() {
 		c.Writer.WriteHeader(c.GetStatusCode())
-		if c.TargetResp != nil && c.TargetResp.Data != nil {
-			_, err := c.Writer.Write(c.TargetResp.Data)
-			if err != nil {
-				logger.Errorf("Write response failed: %v", err)
+		if c.TargetResp != nil {
+			switch res := c.TargetResp.(type) {
+			case *client.ByteResponse:
+				_, err := c.Writer.Write(res.Data)
+				if err != nil {
+					logger.Errorf("Write response failed: %v", err)
+				}
+			case *client.StreamResponse:
+				// create ctx helps goroutine exit
+				ctx, cancel := context.WithCancel(c.Ctx)
+				defer cancel()
+
+				dataCh := make(chan []byte)
+				errCh := make(chan error, 1)
+
+				// goroutine read stream
+				go func() {
+					defer close(dataCh)
+					defer close(errCh)
+					buf := make([]byte, 1024) // 1KB buffer
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+							n, err := res.Stream.Read(buf)
+							if n > 0 {
+								// copy data to prevent data cover
+								data := make([]byte, n)
+								copy(data, buf[:n])
+								select {
+								case dataCh <- data:
+								case <-ctx.Done():
+									return
+								}
+							}
+							if err != nil {
+								if err != io.EOF {
+									errCh <- fmt.Errorf("stream read error: %w", err)
+								} else {
+									errCh <- io.EOF
+								}
+								return
+							}
+						}
+					}
+				}()
+
+				for {
+					select {
+					case <-ctx.Done():
+						_ = res.Stream.Close()
+						return
+					case data, ok := <-dataCh:
+						if !ok {
+							return
+						}
+						if _, err := c.Writer.Write(data); err != nil {
+							cancel()
+							_ = res.Stream.Close()
+							return
+						}
+					case err := <-errCh:
+						if err != nil && err != io.EOF {
+							logger.Errorf("Stream error: %v", err)
+						}
+						return
+					}
+				}
+			default:
+				logger.Errorf("Unknown response type: %T", c.TargetResp)
 			}
+
 		}
 	}
 }
@@ -139,12 +201,6 @@ func (hcm *HttpConnectionManager) buildTargetResponse(c *pch.HttpContext) {
 
 	switch res := c.SourceResp.(type) {
 	case *stdHttp.Response:
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			panic(err)
-		}
-		//close body
-		_ = res.Body.Close()
 		//Merge header
 		remoteHeader := res.Header
 		for k := range remoteHeader {
@@ -152,7 +208,18 @@ func (hcm *HttpConnectionManager) buildTargetResponse(c *pch.HttpContext) {
 		}
 		//status code
 		c.StatusCode(res.StatusCode)
-		c.TargetResp = &client.Response{Data: body}
+
+		if http.IsSSEStream(res) {
+			c.TargetResp = &client.StreamResponse{Stream: res.Body}
+		} else {
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				panic(err)
+			}
+			//close body
+			_ = res.Body.Close()
+			c.TargetResp = &client.ByteResponse{Data: body}
+		}
 	case []byte:
 		c.StatusCode(stdHttp.StatusOK)
 		if json.Valid(res) {
@@ -160,64 +227,7 @@ func (hcm *HttpConnectionManager) buildTargetResponse(c *pch.HttpContext) {
 		} else {
 			c.AddHeader(constant.HeaderKeyContextType, constant.HeaderValueTextPlain)
 		}
-		c.TargetResp = &client.Response{Data: res}
-	case *http.SSEReader:
-		// response is sse stream
-		c.IsStreaming = true
-
-		c.StatusCode(stdHttp.StatusOK)
-		c.AddHeader(constant.HeaderKeyContextType, constant.HeaderValueTextEventStream)
-		c.AddHeader(constant.HeaderKeyCacheControl, constant.HeaderValueNoCache)
-		c.AddHeader(constant.HeaderKeyConnection, constant.HeaderValueKeepAlive)
-
-		// must support Flusher
-		flusher, ok := c.Writer.(stdHttp.Flusher)
-		if !ok {
-			logger.Error("ResponseWriter does not support Flusher")
-			c.SendLocalReply(stdHttp.StatusInternalServerError, []byte("Server does not support streaming"))
-			return
-		}
-
-		// handle sse stream
-		go func() {
-			defer func(res *http.SSEReader) {
-				err := res.Close()
-				if err != nil {
-					logger.Errorf("failed to close SSE stream: %v", err)
-				}
-			}(res)
-			for {
-				select {
-				case event := <-res.Events():
-					if event.Event != "" {
-						_, err := fmt.Fprintf(c.Writer, "event: %s\n", event.Event)
-						if err != nil {
-							logger.Errorf("failed to write event: %v", err)
-							return
-						}
-					}
-					if event.ID != "" {
-						_, err := fmt.Fprintf(c.Writer, "id: %s\n", event.ID)
-						if err != nil {
-							logger.Errorf("failed to write id: %v", err)
-							return
-						}
-					}
-					_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", event.Data)
-					if err != nil {
-						logger.Errorf("failed to write data: %v", err)
-						return
-					}
-					flusher.Flush() // flush immediately
-
-				case err := <-res.Err():
-					if err != nil && err != io.EOF {
-						logger.Errorf("SSE stream error: %v", err)
-					}
-					return
-				}
-			}
-		}()
+		c.TargetResp = &client.ByteResponse{Data: res}
 	default:
 		//dubbo go generic invoke
 		response := util.NewDubboResponse(res, false)

@@ -19,39 +19,21 @@ package http
 
 import (
 	"bufio"
-	"bytes"
-	"context"
-	"fmt"
 	"io"
 	"net/http"
-)
-
-import (
-	"go.opentelemetry.io/otel/attribute"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 import (
 	"github.com/apache/dubbo-go-pixiu/pkg/common/constant"
 )
 
-// SSEEvent SSE Event after parsing
-type SSEEvent struct {
-	Event string
-	Data  []byte
-	ID    string
-}
-
 type SSEReader struct {
 	body    io.ReadCloser
-	scanner *bufio.Scanner
-	eventCh chan SSEEvent
-	errCh   chan error
+	Scanner *bufio.Scanner
 }
 
-// isSSEStream check if the response is a SSE stream
-func isSSEStream(resp *http.Response) bool {
+// IsSSEStream check if the response is a SSE stream
+func IsSSEStream(resp *http.Response) bool {
 	contentType := resp.Header.Get(constant.HeaderKeyContextType)
 	return contentType == constant.HeaderValueTextEventStream
 }
@@ -59,74 +41,19 @@ func isSSEStream(resp *http.Response) bool {
 func NewSSEReader(body io.ReadCloser) *SSEReader {
 	s := &SSEReader{
 		body:    body,
-		scanner: bufio.NewScanner(body),
-		eventCh: make(chan SSEEvent),
-		errCh:   make(chan error, 1),
+		Scanner: bufio.NewScanner(body),
 	}
-	go s.parseStream()
 	return s
 }
 
-// parseStream parses the SSE stream, refer to https://html.spec.whatwg.org/multipage/server-sent-events.html
-func (s *SSEReader) parseStream() {
-	defer close(s.eventCh)
-	defer close(s.errCh)
-	defer func(body io.ReadCloser) {
-		err := body.Close()
-		if err != nil {
-			s.errCh <- fmt.Errorf("failed to close SSE stream: %w", err)
-		}
-	}(s.body)
-
-	// Initialize OpenTelemetry span
-	span := trace.SpanFromContext(context.Background())
-	defer span.End()
-	span.AddEvent("SSE stream started")
-
-	if s.body == nil {
-		s.errCh <- fmt.Errorf("SSE stream body is nil")
-		return
+func (s *SSEReader) Read() ([]byte, error) {
+	if !s.Scanner.Scan() {
+		return []byte(""), io.EOF
 	}
-
-	var event SSEEvent
-
-	for s.scanner.Scan() {
-		line := bytes.TrimSpace(s.scanner.Bytes())
-		if len(line) == 0 {
-			// Empty line indicates the end of an event
-			if len(event.Data) > 0 || event.Event != "" || event.ID != "" {
-				s.eventCh <- event
-				event = SSEEvent{} // reset event
-			}
-			continue
-		}
-
-		// Parse the line based on SSE format
-		if bytes.HasPrefix(line, []byte(constant.SSEData+":")) {
-			event.Data = append(event.Data, bytes.TrimSpace(line[5:])...)
-			event.Data = append(event.Data, '\n')
-		} else if bytes.HasPrefix(line, []byte(constant.SSEEvent+":")) {
-			event.Event = string(bytes.TrimSpace(line[6:]))
-		} else if bytes.HasPrefix(line, []byte(constant.SSEId+":")) {
-			event.ID = string(bytes.TrimSpace(line[3:]))
-		}
-
-		span.AddEvent("SSE event received", trace.WithAttributes(
-			attribute.String("event.type", event.Event),
-			attribute.Int("data.length", len(event.Data)),
-		))
-	}
-
-	// Check for errors after scanning
-	if err := s.scanner.Err(); err != nil {
-		s.errCh <- fmt.Errorf("SSE stream read error: %w", err)
-		span.RecordError(err)
-	} else {
-		s.errCh <- io.EOF // indicate end of stream
-	}
+	line := s.Scanner.Bytes()
+	return line, nil
 }
 
-// Interface methods for SSEReader
-func (s *SSEReader) Events() <-chan SSEEvent { return s.eventCh }
-func (s *SSEReader) Err() <-chan error       { return s.errCh }
-func (s *SSEReader) Close() error            { return s.body.Close() }
+func (s *SSEReader) Close() error {
+	return s.body.Close()
+}

@@ -25,7 +25,9 @@ import (
 
 import (
 	"github.com/pkg/errors"
+
 	"go.opentelemetry.io/otel/attribute"
+
 	"go.opentelemetry.io/otel/metric/global"
 	"go.opentelemetry.io/otel/metric/instrument"
 	"go.opentelemetry.io/otel/metric/instrument/syncint64"
@@ -137,9 +139,9 @@ func (f *Filter) Encode(c *http.HttpContext) filter.FilterStatus {
 	return filter.Continue
 }
 
-func computeApproximateResponseSize(res *client.Response) (int, error) {
+func computeApproximateResponseSize(res *client.ByteResponse) (int, error) {
 	if res == nil {
-		return 0, errors.New("client.Response is null pointer ")
+		return 0, errors.New("client.ByteResponse is null pointer ")
 	}
 	return len(res.Data), nil
 }

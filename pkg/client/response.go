@@ -17,12 +17,38 @@
 
 package client
 
-// Response response from endpoint
-type Response struct {
+import (
+	"io"
+)
+
+type Response interface {
+	IsStream() bool
+}
+
+// ByteResponse response from endpoint
+type ByteResponse struct {
 	Data []byte
 }
 
-// NewResponse create response
-func NewResponse(data []byte) *Response {
-	return &Response{Data: data}
+func (r *ByteResponse) IsStream() bool {
+	return false
+}
+
+// NewByteResponse create response contains a []byte
+func NewByteResponse(data []byte) *ByteResponse {
+	return &ByteResponse{Data: data}
+}
+
+// StreamResponse response from endpoint
+type StreamResponse struct {
+	Stream io.ReadCloser
+}
+
+func (r *StreamResponse) IsStream() bool {
+	return true
+}
+
+// NewStreamResponse create response contains a stream
+func NewStreamResponse(stream io.ReadCloser) *StreamResponse {
+	return &StreamResponse{Stream: stream}
 }

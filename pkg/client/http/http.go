@@ -122,10 +122,6 @@ func (dc *Client) Call(req *client.Request) (resp interface{}, err error) {
 	tmpRet, err := httpClient.Do(newReq)
 	if tmpRet != nil {
 		span.SetAttributes(semconv.HTTPStatusCodeKey.Int(tmpRet.StatusCode))
-		if isSSEStream(tmpRet) {
-			// return a SSE Reader, read stream by caller
-			return NewSSEReader(tmpRet.Body), nil
-		}
 	}
 	if err != nil {
 		span.AddEvent(semconv.ExceptionEventName, trace.WithAttributes(semconv.ExceptionMessageKey.String(err.Error())))

@@ -59,12 +59,9 @@ type HttpContext struct {
 	// localReplyBody: happen error
 	localReplyBody []byte
 	// the response context will return.
-	TargetResp *client.Response
+	TargetResp interface{}
 	// client call response.
 	SourceResp interface{}
-
-	// Is this request a streaming request
-	IsStreaming bool
 
 	HttpConnectionManager model.HttpConnectionManagerConfig
 	Route                 *model.RouteAction
@@ -174,19 +171,13 @@ func (hc *HttpContext) GetApplicationName() string {
 	return ""
 }
 
-// SendLocalReply Means that the request was interrupted and Response will be sent directly
+// SendLocalReply Means that the request was interrupted and ByteResponse will be sent directly
 // Even if it’s currently in to Decode stage
 func (hc *HttpContext) SendLocalReply(status int, body []byte) {
-	if hc.IsStreaming {
-		// cannot send local reply during streaming
-		logger.Error("Cannot send local reply during streaming")
-		return
-	}
-
 	hc.localReply = true
 	hc.statusCode = status
 	hc.localReplyBody = body
-	hc.TargetResp = &client.Response{Data: body}
+	hc.TargetResp = &client.ByteResponse{Data: body}
 	if json.Valid(body) {
 		hc.AddHeader(constant.HeaderKeyContextType, constant.HeaderValueApplicationJson)
 	} else {
