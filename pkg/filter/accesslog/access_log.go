@@ -21,13 +21,13 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/apache/dubbo-go-pixiu/pkg/client"
 	"strconv"
 	"strings"
 	"time"
 )
 
 import (
+	"github.com/apache/dubbo-go-pixiu/pkg/client"
 	"github.com/apache/dubbo-go-pixiu/pkg/common/constant"
 	"github.com/apache/dubbo-go-pixiu/pkg/common/extension/filter"
 	"github.com/apache/dubbo-go-pixiu/pkg/context/http"
