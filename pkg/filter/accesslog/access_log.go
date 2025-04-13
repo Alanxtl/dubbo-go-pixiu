@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/apache/dubbo-go-pixiu/pkg/client"
 	"strconv"
 	"strings"
 	"time"
@@ -137,7 +138,7 @@ func buildAccessLogMsg(c *http.HttpContext, cost time.Duration) string {
 		builder.WriteString(fmt.Sprintf("invoke err [ %v", err))
 		builder.WriteString("] ")
 	}
-	resp := c.TargetResp.Data
+	resp := c.TargetResp.(client.ByteResponse).Data
 	if err != nil {
 		builder.WriteString(" response can not convert to string")
 		builder.WriteString("] ")
