@@ -25,18 +25,18 @@ type Response interface {
 	IsStream() bool
 }
 
-// ByteResponse response from endpoint
-type ByteResponse struct {
+// UnaryResponse response from endpoint
+type UnaryResponse struct {
 	Data []byte
 }
 
-func (r *ByteResponse) IsStream() bool {
+func (r *UnaryResponse) IsStream() bool {
 	return false
 }
 
 // NewByteResponse create response contains a []byte
-func NewByteResponse(data []byte) *ByteResponse {
-	return &ByteResponse{Data: data}
+func NewByteResponse(data []byte) *UnaryResponse {
+	return &UnaryResponse{Data: data}
 }
 
 // StreamResponse response from endpoint

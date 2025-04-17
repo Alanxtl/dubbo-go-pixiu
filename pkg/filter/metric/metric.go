@@ -128,7 +128,7 @@ func (f *Filter) Encode(c *http.HttpContext) filter.FilterStatus {
 		sizeRequest.Add(c.Ctx, int64(size), commonAttrs...)
 	}
 
-	size, err = computeApproximateResponseSize(c.TargetResp.(*client.ByteResponse))
+	size, err = computeApproximateResponseSize(c.TargetResp.(*client.UnaryResponse))
 	if err != nil {
 		logger.Warn("can not compute response size", err)
 	} else {
@@ -139,9 +139,9 @@ func (f *Filter) Encode(c *http.HttpContext) filter.FilterStatus {
 	return filter.Continue
 }
 
-func computeApproximateResponseSize(res *client.ByteResponse) (int, error) {
+func computeApproximateResponseSize(res *client.UnaryResponse) (int, error) {
 	if res == nil {
-		return 0, errors.New("client.ByteResponse is null pointer ")
+		return 0, errors.New("client.UnaryResponse is null pointer ")
 	}
 	return len(res.Data), nil
 }
