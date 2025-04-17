@@ -349,7 +349,7 @@ func (p *Prometheus) HandlerFunc() ContextHandlerFunc {
 		if err1 == nil {
 			p.reqSz.WithLabelValues(statusStr, method, url).Observe(float64(reqSz))
 		}
-		resSz, err2 := computeApproximateResponseSize(c.TargetResp.(*client.ByteResponse))
+		resSz, err2 := computeApproximateResponseSize(c.TargetResp.(*client.UnaryResponse))
 		if err2 == nil {
 			p.resSz.WithLabelValues(statusStr, method, url).Observe(float64(resSz))
 		}
@@ -384,9 +384,9 @@ func computeApproximateRequestSize(r *http.Request) (int, error) {
 	return s, nil
 }
 
-func computeApproximateResponseSize(res *client.ByteResponse) (int, error) {
+func computeApproximateResponseSize(res *client.UnaryResponse) (int, error) {
 	if res == nil {
-		return 0, errors.New("client.ByteResponse is null pointer ")
+		return 0, errors.New("client.UnaryResponse is null pointer ")
 	}
 	return len(res.Data), nil
 }

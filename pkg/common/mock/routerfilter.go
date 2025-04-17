@@ -20,14 +20,14 @@ package mock
 import (
 	"encoding/json"
 	"fmt"
-	stdhttp "net/http"
+	"net/http"
 	"net/url"
 	"time"
 )
 
 import (
 	"github.com/apache/dubbo-go-pixiu/pkg/common/extension/filter"
-	"github.com/apache/dubbo-go-pixiu/pkg/context/http"
+	contexthttp "github.com/apache/dubbo-go-pixiu/pkg/context/http"
 	"github.com/apache/dubbo-go-pixiu/pkg/logger"
 )
 
@@ -47,11 +47,11 @@ type (
 	// FilterFactory is http filter instance
 	FilterFactory struct {
 		cfg    *Config
-		client stdhttp.Client
+		client http.Client
 	}
 	//Filter
 	Filter struct {
-		client stdhttp.Client
+		client http.Client
 	}
 	// Config describe the config of FilterFactory
 	Config struct {
@@ -70,37 +70,36 @@ func (p *Plugin) CreateFilterFactory() (filter.HttpFilterFactory, error) {
 	return &FilterFactory{cfg: &Config{}}, nil
 }
 
-func (factory *FilterFactory) Config() interface{} {
-	return factory.cfg
+func (ff *FilterFactory) Config() interface{} {
+	return ff.cfg
 }
 
-func (factory *FilterFactory) Apply() error {
-	cfg := factory.cfg
-	client := stdhttp.Client{
+func (ff *FilterFactory) Apply() error {
+	cfg := ff.cfg
+	client := http.Client{
 		Timeout: cfg.Timeout,
-		Transport: stdhttp.RoundTripper(&stdhttp.Transport{
+		Transport: http.RoundTripper(&http.Transport{
 			MaxIdleConns:        cfg.MaxIdleConns,
 			MaxIdleConnsPerHost: cfg.MaxIdleConnsPerHost,
 			MaxConnsPerHost:     cfg.MaxConnsPerHost,
 		}),
 	}
-	factory.client = client
+	ff.client = client
 	return nil
 }
 
-func (factory *FilterFactory) PrepareFilterChain(ctx *http.HttpContext, chain filter.FilterChain) error {
+func (ff *FilterFactory) PrepareFilterChain(ctx *contexthttp.HttpContext, chain filter.FilterChain) error {
 	//reuse http client
-	f := &Filter{factory.client}
+	f := &Filter{ff.client}
 	chain.AppendDecodeFilters(f)
 	return nil
 }
 
-func (f *Filter) Decode(hc *http.HttpContext) filter.FilterStatus {
-
+func (f *Filter) Decode(hc *contexthttp.HttpContext) filter.FilterStatus {
 	r := hc.Request
 
 	var (
-		req *stdhttp.Request
+		req *http.Request
 		err error
 	)
 
@@ -111,10 +110,10 @@ func (f *Filter) Decode(hc *http.HttpContext) filter.FilterStatus {
 		RawQuery: r.URL.RawQuery,
 	}
 
-	req, err = stdhttp.NewRequest(r.Method, parsedURL.String(), r.Body)
+	req, err = http.NewRequest(r.Method, parsedURL.String(), r.Body)
 	if err != nil {
-		bt, _ := json.Marshal(http.ErrResponse{Message: fmt.Sprintf("BUG: new request failed: %v", err)})
-		hc.SendLocalReply(stdhttp.StatusInternalServerError, bt)
+		bt, _ := json.Marshal(contexthttp.ErrResponse{Message: fmt.Sprintf("BUG: new request failed: %v", err)})
+		hc.SendLocalReply(http.StatusInternalServerError, bt)
 		return filter.Stop
 	}
 	req.Header = r.Header
@@ -124,10 +123,10 @@ func (f *Filter) Decode(hc *http.HttpContext) filter.FilterStatus {
 	if err != nil {
 		urlErr, ok := err.(*url.Error)
 		if ok && urlErr.Timeout() {
-			hc.SendLocalReply(stdhttp.StatusGatewayTimeout, []byte(err.Error()))
+			hc.SendLocalReply(http.StatusGatewayTimeout, []byte(err.Error()))
 			return filter.Stop
 		}
-		hc.SendLocalReply(stdhttp.StatusServiceUnavailable, []byte(err.Error()))
+		hc.SendLocalReply(http.StatusServiceUnavailable, []byte(err.Error()))
 		return filter.Stop
 	}
 

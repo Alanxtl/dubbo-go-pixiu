@@ -110,7 +110,6 @@ func TestStreamingResponse(t *testing.T) {
 	}()
 
 	// event waiting test
-	time.Now()
 	for {
 		receivedEvents := httpCtx.Writer.(*StreamRecorder).receivedBuf
 		select {
