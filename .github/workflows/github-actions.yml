@@ -145,7 +145,7 @@ jobs:
               go get -v -t -d ./...
           fi
       - name: Install go ci lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.48.0
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
       - name: Run Linter
         run: GO111MODULE=on golangci-lint run --timeout=30m -v --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
 
