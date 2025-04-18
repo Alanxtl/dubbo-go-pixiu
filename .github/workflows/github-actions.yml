@@ -147,7 +147,7 @@ jobs:
       - name: Install go ci lint
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.2
       - name: Run Linter
-        run: GO111MODULE=on golangci-lint run --timeout=30m -v --enable-only=govet staticcheck ineffassign misspell
+        run: GO111MODULE=on golangci-lint run --timeout=30m -v --enable-only="govet staticcheck ineffassign misspell"
 
   go-test:
     name: Go Test ${{ matrix.os }} - Go ${{ matrix.go_version }}
