@@ -94,7 +94,7 @@ jobs:
           fi
       - name: Go Fmt
         run: |
-          go fmt ./... && git status && [[ -z `git status -s` ]]
+          go fmt ./... && gofmt -s && git status && [[ -z `git status -s` ]]
           # diff -u <(echo -n) <(gofmt -d -s .)
 
   lint:
@@ -248,7 +248,8 @@ jobs:
               dep ensure
           else
               go get -v -t -d ./...
-          fi
+          figofmt -s && git status && [[ -z `git status -s` ]]
+
       # integration test
       # This step only runs when the event type is a pull_request
       - name: Integrate Test
