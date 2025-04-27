@@ -209,7 +209,7 @@ func (a *CloudAdapter) GetServiceNames() []string {
 }
 
 // Config get config for Adapter
-func (a *CloudAdapter) Config() interface{} {
+func (a *CloudAdapter) Config() any {
 	return a.cfg
 }
 

@@ -60,7 +60,7 @@ func (a *DemoAdapter) Apply() error {
 }
 
 // Config get config for Adapter
-func (a *DemoAdapter) Config() interface{} {
+func (a *DemoAdapter) Config() any {
 	return a.cfg
 }
 
@@ -76,7 +76,7 @@ func TestAdapterManager(t *testing.T) {
 			Adapters: []*model.Adapter{
 				&model.Adapter{
 					Name:   "test",
-					Config: make(map[string]interface{}),
+					Config: make(map[string]any),
 				},
 			},
 		},
