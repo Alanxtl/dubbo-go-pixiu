@@ -18,9 +18,11 @@
 package constant
 
 const (
-	HeaderKeyContextType  = "Content-Type"
-	HeaderKeyCacheControl = "Cache-Control"
-	HeaderKeyConnection   = "Connection"
+	HeaderKeyContextType      = "Content-Type"
+	HeaderKeyCacheControl     = "Cache-Control"
+	HeaderKeyConnection       = "Connection"
+	HeaderKeyTransferEncoding = "Transfer-Encoding"
+	HeaderKeyContentLength    = "Content-Length"
 
 	HeaderKeyAccessControlAllowOrigin      = "Access-Control-Allow-Origin"
 	HeaderKeyAccessControlAllowHeaders     = "Access-Control-Allow-Headers"
@@ -29,10 +31,15 @@ const (
 	HeaderKeyAccessControlMaxAge           = "Access-Control-Max-Age"
 	HeaderKeyAccessControlAllowCredentials = "Access-Control-Allow-Credentials"
 
-	HeaderValueJsonUtf8        = "application/json;charset=UTF-8"
-	HeaderValueTextPlain       = "text/plain"
-	HeaderValueTextEventStream = "text/event-stream"
-	HeaderValueApplicationJson = "application/json"
+	HeaderValueJsonUtf8               = "application/json;charset=UTF-8"
+	HeaderValueTextPlain              = "text/plain"
+	HeaderValueTextEventStream        = "text/event-stream"
+	HeaderValueApplicationJson        = "application/json"
+	HeaderValueApplicationOctetStream = "application/octet-stream"
+	HeaderValueApplicationNDJson      = "application/x-ndjson"
+	HeaderValueImageJpeg              = "image/jpeg"
+	HeaderValueChunked                = "chunked"
+	HeaderValueTextPrefix             = "text/"
 
 	HeaderValueKeepAlive = "keep-alive"
 	HeaderValueNoCache   = "no-cache"

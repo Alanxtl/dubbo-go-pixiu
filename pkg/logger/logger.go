@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 )
 
 import (
@@ -35,7 +36,7 @@ import (
 
 var control *logController
 
-type logger struct {
+type pixiuLogger struct {
 	*zap.SugaredLogger
 	config *zap.Config
 }
@@ -46,6 +47,21 @@ func init() {
 		control = new(logController)
 		InitLogger(nil)
 	}
+}
+
+// PaddedCallerEncoder is a custom caller encoder that ensures that all file paths are displayed at the same length
+func PaddedCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
+
+	callerPath := caller.TrimmedPath()
+
+	// Set a fixed length, and if the path is too short, add a space after it
+	const fixedLength = 30
+	if len(callerPath) < fixedLength {
+		padding := strings.Repeat(" ", fixedLength-len(callerPath))
+		callerPath = callerPath + padding
+	}
+
+	enc.AppendString(callerPath)
 }
 
 // InitLog load from config path
@@ -69,7 +85,7 @@ func InitLog(logConfFile string) error {
 	err = yaml.UnmarshalYML(confFileStream, conf)
 	if err != nil {
 		InitLogger(nil)
-		return perrors.New(fmt.Sprintf("[Unmarshal]init logger error: %v", err))
+		return perrors.New(fmt.Sprintf("[Unmarshal]init pixiuLogger error: %v", err))
 	}
 
 	InitLogger(conf)
@@ -84,21 +100,24 @@ func InitLogger(conf *zap.Config) {
 		zapLoggerEncoderConfig := zapcore.EncoderConfig{
 			TimeKey:        "time",
 			LevelKey:       "level",
-			NameKey:        "logger",
+			NameKey:        "pixiuLogger",
 			CallerKey:      "caller",
 			MessageKey:     "message",
 			StacktraceKey:  "stacktrace",
 			EncodeLevel:    zapcore.CapitalColorLevelEncoder,
 			EncodeTime:     zapcore.ISO8601TimeEncoder,
 			EncodeDuration: zapcore.SecondsDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeCaller:   PaddedCallerEncoder,
+			// EncodeCaller:   zapcore.ShortCallerEncoder,
 		}
 		zapLoggerConfig.EncoderConfig = zapLoggerEncoderConfig
 	} else {
 		zapLoggerConfig = *conf
+		// Set up a custom encoder directly without checking the original value
+		zapLoggerConfig.EncoderConfig.EncodeCaller = PaddedCallerEncoder
 	}
 	zapLogger, _ := zapLoggerConfig.Build(zap.AddCallerSkip(2))
-	l := &logger{zapLogger.Sugar(), &zapLoggerConfig}
+	l := &pixiuLogger{zapLogger.Sugar(), &zapLoggerConfig}
 
 	control.updateLogger(l)
 }
