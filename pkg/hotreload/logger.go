@@ -18,6 +18,10 @@
 package hotreload
 
 import (
+	"go.uber.org/zap"
+)
+
+import (
 	"github.com/apache/dubbo-go-pixiu/pkg/logger"
 	"github.com/apache/dubbo-go-pixiu/pkg/model"
 )
@@ -30,12 +34,12 @@ func (r *LoggerReloader) CheckUpdate(oldConfig, newConfig *model.Bootstrap) bool
 	oc := oldConfig.Log
 	nc := newConfig.Log
 
-	if oc == nil && nc != nil {
+	if nc == nil && oc != nil {
 		return true
-	}
-
-	if oc != nil && nc == nil {
+	} else if nc == nil && oc == nil {
 		return false
+	} else if nc != nil && oc == nil {
+		return true
 	}
 
 	// Check if any logger configuration fields have changed.
@@ -67,7 +71,11 @@ func (r *LoggerReloader) CheckUpdate(oldConfig, newConfig *model.Bootstrap) bool
 
 // HotReload applies the new logger configuration.
 func (r *LoggerReloader) HotReload(oldConfig, newConfig *model.Bootstrap) error {
-	if err := logger.HotReload(newConfig.Log.Build()); err != nil {
+	var newConfBuild *zap.Config
+	if newConfig.Log != nil {
+		newConfBuild = newConfig.Log.Build()
+	}
+	if err := logger.HotReload(newConfBuild); err != nil {
 		logger.Errorf("Failed to reload logger configuration: %v", err)
 		return err
 	}
