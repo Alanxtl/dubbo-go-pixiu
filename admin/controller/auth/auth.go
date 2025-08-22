@@ -49,7 +49,7 @@ func JWTAuth() gin.HandlerFunc {
 		claims, err := j.ParseToken(token)
 		if err != nil {
 			// token authorization expiration
-			if err == TokenExpired {
+			if err == ErrTokenExpired {
 				c.JSON(http.StatusOK, config.WithError(errors.New("The token authorization has expired, please reapply for authorization")))
 				c.Abort()
 				return
@@ -70,11 +70,11 @@ type JWT struct {
 
 // Constant
 var (
-	TokenExpired     error  = errors.New("token is expired")
-	TokenNotValidYet error  = errors.New("token is not valid yet")
-	TokenMalformed   error  = errors.New("this is not a token")
-	TokenInvalid     error  = errors.New("couldn't handle this token")
-	SignKey          string = "dubbo-go-pixiu" // TODO: The signature information is set to be dynamically obtained
+	ErrTokenExpired     error  = errors.New("token is expired")
+	ErrTokenNotValidYet error  = errors.New("token is not valid yet")
+	ErrTokenMalformed   error  = errors.New("this is not a token")
+	ErrTokenInvalid     error  = errors.New("couldn't handle this token")
+	SignKey             string = "dubbo-go-pixiu" // TODO: The signature information is set to be dynamically obtained
 )
 
 // Custom Claims
@@ -115,13 +115,13 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 		var ve jwt.ValidationError
 		if errors.As(err, &ve) {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, TokenMalformed
+				return nil, ErrTokenMalformed
 			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
-				return nil, TokenExpired
+				return nil, ErrTokenExpired
 			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
-				return nil, TokenNotValidYet
+				return nil, ErrTokenNotValidYet
 			} else {
-				return nil, TokenInvalid
+				return nil, ErrTokenInvalid
 			}
 		}
 	}
@@ -130,7 +130,7 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		return claims, nil
 	}
-	return nil, TokenInvalid
+	return nil, ErrTokenInvalid
 }
 
 // Update token
@@ -151,5 +151,5 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 		claims.StandardClaims.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
 		return j.CreateToken(*claims)
 	}
-	return "", TokenInvalid
+	return "", ErrTokenInvalid
 }
