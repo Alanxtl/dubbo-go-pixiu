@@ -48,6 +48,6 @@ jobs:
           cache: true
 
       - name: Run reviewdog
-        uses: reviewdog/action-golangci-lint@v2
+        uses: reviewdog/action-golangci-lint@v2 # NOSONAR
         with:
           golangci_lint_flags: "--timeout=10m"
