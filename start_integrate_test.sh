@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #
 #  Licensed to the Apache Software Foundation (ASF) under one or more
 #  contributor license agreements.  See the NOTICE file distributed with
@@ -14,37 +16,46 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-#!/bin/bash
+set -euo pipefail
 
-set -e
-set -x
+readonly SAMPLES_REPO="https://github.com/apache/dubbo-go-pixiu-samples.git"
+readonly SAMPLES_DIR="integrate_samples"
 
-echo 'start integrate-test'
+readonly HEAD_REPO_SLUG="${1-}" # e.g., "my-fork/dubbo-go-pixiu"
+readonly HEAD_COMMIT_SHA="${2-}" # The specific commit SHA to test
+readonly BASE_BRANCH="${3-}"    # The target branch of the PR, e.g., "main"
 
-# set root workspace
-ROOT_DIR=$(pwd)
-echo "integrate-test root work-space -> ${ROOT_DIR}"
+main() {
+    if [[ -z "${HEAD_REPO_SLUG}" || -z "${HEAD_COMMIT_SHA}" || -z "${BASE_BRANCH}" ]]; then
+        echo "Error: Missing required arguments." >&2
+        echo "Usage: $0 <head-repo-slug> <head-commit-sha> <base-branch>" >&2
+        exit 1
+    fi
 
-# show all github-env
-echo "github current commit id  -> $2"
-echo "github pull request branch -> ${GITHUB_REF}"
-echo "github pull request slug -> ${GITHUB_REPOSITORY}"
-echo "github pull request repo slug -> ${GITHUB_REPOSITORY}"
-echo "github pull request actor -> ${GITHUB_ACTOR}"
-echo "github pull request repo param -> $1"
-echo "github pull request base branch -> $3"
-echo "github pull request head branch -> ${GITHUB_HEAD_REF}"
+    echo "Starting integration test setup..."
+    echo "--------------------------------------------------"
+    echo "  Testing Commit:   ${HEAD_COMMIT_SHA}"
+    echo "  From Repository:  ${HEAD_REPO_SLUG}"
+    echo "  Against Branch:   ${BASE_BRANCH}"
+    echo "--------------------------------------------------"
 
-echo "use dubbo-go-samples $3 branch for integration testing"
-git clone -b main https://github.com/apache/dubbo-go-pixiu-samples.git integrate_samples && cd integrate_samples
+    rm -rf "${SAMPLES_DIR}"
 
-# update dubbo-go to current commit id
-go mod edit -replace=github.com/apache/dubbo-go-pixiu=github.com/"$1"@"$2"
+    echo "--> Cloning samples repository from branch '${BASE_BRANCH}'..."
+    git clone -b "${BASE_BRANCH}" --depth 1 "${SAMPLES_REPO}" "${SAMPLES_DIR}"
+    cd "${SAMPLES_DIR}"
+    echo "--> Successfully cloned and entered '${SAMPLES_DIR}'."
 
-#grep -rl "github.com/apache/dubbo-go-pixiu/pkg" | xargs sed -i 's/github.com\/apache\/dubbo-go-pixiu\/pkg\//github.com\/apache\/dubbo-go-pixiu\/pixiu\/pkg\//g'
+    local module_to_replace="github.com/apache/dubbo-go-pixiu"
+    local replacement_path="github.com/${HEAD_REPO_SLUG}@${HEAD_COMMIT_SHA}"
+    echo "--> Replacing module '${module_to_replace}' with '${replacement_path}'..."
+    go mod edit -replace="${module_to_replace}=${replacement_path}"
 
-# prepare dependency
-go mod tidy
+    echo "--> Tidying Go modules to fetch the new dependency..."
+    go mod tidy
 
-# start integrate test
-./start_integrate_test.sh
+    echo "--> Handing off to the test runner inside the samples repository..."
+    ./start_integrate_test.sh
+}
+
+main "$@"

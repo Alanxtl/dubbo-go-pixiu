@@ -17,73 +17,78 @@
 # under the License.
 #
 
-cur_mkfile := $(abspath $(lastword $(MAKEFILE_LIST)))
-currentPath := $(patsubst %/, %, $(dir $(cur_mkfile)))
-pixiuPath := /cmd/pixiu/
-mainPath := $(currentPath)$(pixiuPath)
-VERSION = $(shell git describe --abbrev=0  --tags $(git rev-list --tags --max-count=1) || echo "0.0.4")
-
-targetName := dubbo-go-pixiu
-
-api-config-path:=${api-config}
-ifeq (,$(api-config-path))
-$(warning api-config-path is nil, default: configs/api_config.yaml)
-api-config-path = configs/api_config.yaml
+PROJECT_ROOT := $(shell git rev-parse --show-toplevel)
+MAIN_PATH    := ./cmd/pixiu
+TARGET_NAME  := dubbo-go-pixiu
+ifeq ($(shell go env GOOS), windows)
+    TARGET_NAME := $(TARGET_NAME).exe
 endif
 
-config-path:=${config-path}
-ifeq (,$(config-path))
-$(warning config-path is nil, default: configs/conf.yaml)
-config-path = configs/conf.yaml
-endif
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
 
-$(info api-config-path = $(api-config-path))
-$(info config-path = $(config-path))
+API_CONFIG_PATH ?= configs/api_config.yaml
+CONFIG_PATH     ?= configs/conf.yaml
 
-os := $(shell go env GOOS)
-ifeq (windows,$(os))
-	targetName = dubbo-go-pixiu.exe
-endif
-exe := $(mainPath)$(targetName)
-build:
-	cd $(mainPath) && go build  -o $(currentPath)/$(targetName) *.go
+IMAGE_NAME ?= dubbogopixiu/dubbo-go-pixiu
 
-run: build
-	./dubbo-go-pixiu gateway start -c $(config-path)
+LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)'"
 
-license-check-util:
-	go install github.com/lsm-dev/license-header-checker/cmd/license-header-checker@latest
+.PHONY: all build run image test integrate-test clean license-check license-check-util import-format check-import-format help
 
-license-check:
-	license-header-checker -v -a -r -i vendor -i .github/actions /tmp/tools/license/license.txt . go
+all: build
 
-image:
+build: ## build binary
+	@echo "==> Building $(TARGET_NAME) version $(VERSION)..."
+	@go build $(LDFLAGS) -o $(TARGET_NAME) $(MAIN_PATH)
+	@echo "==> Build complete: $(PROJECT_ROOT)/$(TARGET_NAME)"
+
+run: build ## start Pixiu Gateway
+	@echo "==> Starting gateway with config: $(CONFIG_PATH)..."
+	@./$(TARGET_NAME) gateway start -c $(CONFIG_PATH)
+
+image: ## build Docker image
+	@echo "==> Building Docker image $(IMAGE_NAME) with tags: latest, $(VERSION)..."
 	@docker build \
-		-t dubbogopixiu/$(targetName):latest \
-		-t dubbogopixiu/$(targetName):$(VERSION) \
-		--build-arg build=$(BUILD) --build-arg version=$(VERSION) \
-		-f Dockerfile --no-cache --platform linux/amd64 .
+		-t $(IMAGE_NAME):latest \
+		-t $(IMAGE_NAME):$(VERSION) \
+		--build-arg version=$(VERSION) \
+		-f Dockerfile --platform linux/amd64 .
 
-test:
-	sh before_ut.sh
-	go test ./pkg/...  -gcflags=-l -coverprofile=coverage.txt -covermode=atomic
+test: ## run unit tests
+	@echo "==> Running unit tests..."
+	@sh before_ut.sh
+	@go test ./pkg/... -coverprofile=coverage.txt -covermode=atomic
 
-integrate-test:
-	sh start_integrate_test.sh
+integrate-test: ## run integration tests
+	@echo "==> Running integration tests..."
+	@sh start_integrate_test.sh
 
-clean:
-	@rm -rf ./dubbo-go-pixiu
+clean: ## clean up build artifacts
+	@echo "==> Cleaning up..."
+	@rm -f $(TARGET_NAME) coverage.txt
 
-import-format:check-import-format
+license-check-util: ## install license header checker utility
+	@go install github.com/lsm-dev/license-header-checker/cmd/license-header-checker@latest
+
+license-check: ## check license headers
+	@echo "==> Checking license headers..."
+	@license-header-checker -v -a -r -i vendor -i .github/actions /tmp/tools/license/license.txt . go
+
+import-format: check-import-format ## format go import blocks
+	@echo "==> Formatting Go imports..."
 	@imports-formatter -bl=false -module=github.com/apache/dubbo-go-pixiu
-check-import-format:
-	@type imports-formatter >/dev/null 2>&1 || echo "imports-formatter is not installed, please install it first by run 'go install github.com/dubbogo/tools/cmd/imports-formatter@latest'"
 
-# build pilot by docker-builder
+check-import-format: ## check installation of imports-formatter
+	@command -v imports-formatter >/dev/null 2>&1 || \
+		(echo "Error: imports-formatter is not installed. Please run 'go install github.com/dubbogo/tools/cmd/imports-formatter@latest'" && exit 1)
 
-export
-# DEBUG = 1
-RUN = ./common/scripts/run.sh
-MAKE_DOCKER = $(RUN) make --no-print-directory -e -f Makefile.core.mk
-%:
-	@$(MAKE_DOCKER) $@
+
+help: ## display this help information
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "Targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.DEFAULT:
+	@echo "==> Forwarding target '$@' to Makefile.core.mk..."
+	@./common/scripts/run.sh make --no-print-directory -e -f Makefile.core.mk $@
