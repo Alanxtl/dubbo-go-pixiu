@@ -70,12 +70,12 @@ jobs:
         with:
           go-version: '1.25'
           cache: true
-          only-new-issues: true
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.1
-          args: --timeout=30m --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
+          only-new-issues: true
+          args: --timeout=30m
 
   unit-test:
     name: Unit Tests - Go 1.25
