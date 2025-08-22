@@ -18,17 +18,16 @@
 package auth
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"time"
 )
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/pkg/errors"
 )
 
 import (
@@ -71,10 +70,10 @@ type JWT struct {
 
 // Constant
 var (
-	TokenExpired     error  = errors.New("Token is expired")
-	TokenNotValidYet error  = errors.New("Token is not valid yet")
-	TokenMalformed   error  = errors.New("This is not a token")
-	TokenInvalid     error  = errors.New("Couldn't handle this token")
+	TokenExpired     error  = errors.New("token is expired")
+	TokenNotValidYet error  = errors.New("token is not valid yet")
+	TokenMalformed   error  = errors.New("this is not a token")
+	TokenInvalid     error  = errors.New("couldn't handle this token")
 	SignKey          string = "dubbo-go-pixiu" // TODO: The signature information is set to be dynamically obtained
 )
 
@@ -113,7 +112,8 @@ func (j *JWT) ParseToken(tokenString string) (*CustomClaims, error) {
 		return j.SigningKey, nil
 	})
 	if err != nil {
-		if ve, ok := err.(jwt.ValidationError); ok {
+		var ve jwt.ValidationError
+		if errors.As(err, &ve) {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
 				return nil, TokenMalformed
 			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {

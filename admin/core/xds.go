@@ -41,8 +41,8 @@ import (
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	cacheservice "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	resourceservice "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	envoyServer "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
 	"google.golang.org/grpc"
@@ -64,7 +64,7 @@ var (
 	port   = uint(18000)
 	nodeID = "test-id"
 
-	snaphost cache.SnapshotCache
+	snaphost cacheservice.SnapshotCache
 )
 
 const (
@@ -89,7 +89,7 @@ func registerServer(grpcServer *grpc.Server, server envoyServer.Server) {
 // StartxDsServer RunXDSServerWithCache starts an xDS server at the gi.ven port.
 func StartxDsServer() error {
 	// Create a snaphost
-	snaphost = cache.NewSnapshotCache(false, cache.IDHash{}, logger.GetLogger())
+	snaphost = cacheservice.NewSnapshotCache(false, cacheservice.IDHash{}, logger.GetLogger())
 
 	// Create the config that we'll serve to Envoy
 	config := GenerateSnapshotPixiu()
@@ -278,12 +278,12 @@ func makeClusters() *pixiupb.PixiuExtensionClusters {
 }
 
 // GenerateSnapshotPixiu returns a snapshot with a single cluster and endpoint.
-func GenerateSnapshotPixiu() *cache.Snapshot {
+func GenerateSnapshotPixiu() *cacheservice.Snapshot {
 	ldsResource, _ := anypb.New(makeListeners())
 	cdsResource, _ := anypb.New(makeClusters())
-	snap, _ := cache.NewSnapshot("2",
-		map[resource.Type][]types.Resource{
-			resource.ExtensionConfigType: {
+	snap, _ := cacheservice.NewSnapshot("2",
+		map[resourceservice.Type][]types.Resource{
+			resourceservice.ExtensionConfigType: {
 				&core.TypedExtensionConfig{
 					Name:        xds.ClusterType,
 					TypedConfig: cdsResource,

@@ -60,13 +60,13 @@ func WithZkName(name string) Option {
 
 // ZooKeeperClient represents zookeeper client Configuration
 type ZooKeeperClient struct {
-	name         string
-	ZkAddrs      []string
-	sync.RWMutex // for conn
-	conn         *zk.Conn
-	Timeout      time.Duration
-	exit         chan struct{}
-	Wait         sync.WaitGroup
+	name    string
+	ZkAddrs []string
+	mutex   sync.RWMutex
+	conn    *zk.Conn
+	Timeout time.Duration
+	exit    chan struct{}
+	Wait    sync.WaitGroup
 
 	eventRegistry     map[string][]chan zk.Event
 	eventRegistryLock sync.RWMutex
@@ -202,8 +202,8 @@ func (z *ZooKeeperClient) HandleZkEvent(s <-chan zk.Event) {
 
 // getConn gets zookeeper connection safely
 func (z *ZooKeeperClient) getConn() *zk.Conn {
-	z.RLock()
-	defer z.RUnlock()
+	z.mutex.RLock()
+	defer z.mutex.RUnlock()
 	return z.conn
 }
 
@@ -294,10 +294,10 @@ func (z *ZooKeeperClient) GetConnState() zk.State {
 
 func (z *ZooKeeperClient) Destroy() {
 	z.stop()
-	z.Lock()
+	z.mutex.Lock()
 	conn := z.conn
 	z.conn = nil
-	z.Unlock()
+	z.mutex.Unlock()
 	if conn != nil {
 		conn.Close()
 	}
