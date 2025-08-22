@@ -70,6 +70,7 @@ jobs:
         with:
           go-version: '1.25'
           cache: true
+          only-new-issues: true
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
