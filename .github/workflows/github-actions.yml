@@ -83,6 +83,8 @@ jobs:
     needs: [license-check, format, lint]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Merge base branch
         if: github.event_name == 'pull_request'
         run: |
@@ -111,6 +113,8 @@ jobs:
     needs: unit-test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Merge base branch
         if: github.event_name == 'pull_request'
         run: |
