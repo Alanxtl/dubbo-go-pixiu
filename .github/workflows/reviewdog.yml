@@ -17,7 +17,7 @@
 # under the License.
 #
 
-name: reviewdog
+name: Reviewdog
 
 on:
   pull_request:
