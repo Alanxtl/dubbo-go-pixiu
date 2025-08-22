@@ -31,7 +31,7 @@ on:
 jobs:
 
   license-check:
-    name: License Header Check - go 1.25
+    name: License Header Check - Go 1.25
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
         uses: apache/skywalking-eyes/header@501a28d2fb4a9b962661987e50cf0219631b32ff
 
   format:
-    name: Format Check - go 1.25
+    name: Imports Formatter Check - Go 1.25
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
       - name: Check formatting
         run: |
           go fmt ./...
-          imports-formatter
+          GOROOT=$(go env GOROOT) imports-formatter
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "Code is not properly formatted. Please run 'go fmt ./...' and 'imports-formatter'."
             git diff
@@ -62,7 +62,7 @@ jobs:
           fi
 
   lint:
-    name: Go Linter - go 1.25
+    name: Go Linter - Go 1.25
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,7 +77,7 @@ jobs:
           args: --timeout=30m --disable-all --enable=govet --enable=staticcheck --enable=ineffassign --enable=misspell
 
   unit-test:
-    name: Unit Tests - go 1.25
+    name: Unit Tests - Go 1.25
     runs-on: ubuntu-latest
     needs: [license-check, format, lint]
     steps:
@@ -105,7 +105,7 @@ jobs:
           fail_ci_if_error: true
 
   integration-test:
-    name: Integration Tests - go 1.25
+    name: Integration Tests - Go 1.25
     runs-on: ubuntu-latest
     needs: unit-test
     steps:
