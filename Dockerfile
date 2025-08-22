@@ -18,7 +18,7 @@
 #
 
 ### builder
-FROM golang:1.23.4-bullseye AS builder
+FROM golang:1.25-rc-bullseye AS builder
 LABEL MAINTAINER="dev@dubbo.apache.org"
 
 RUN apt-get update && apt-get install -y --no-install-recommends gcc
