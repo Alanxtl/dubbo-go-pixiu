@@ -47,4 +47,5 @@ jobs:
       - name: Run reviewdog
         uses: reviewdog/action-golangci-lint@v2 # NOSONAR
         with:
+          golangci_lint_version: v1.59.1
           golangci_lint_flags: "--timeout=10m"
