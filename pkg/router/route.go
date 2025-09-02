@@ -137,7 +137,7 @@ func (rt *Route) PutAPI(api router.API) error {
 	}
 	return errors.Errorf(
 		"Method %s with address %s already exists in path %s",
-		api.Method.HTTPVerb, lowerCasePath, node.fullPath,
+		api.HTTPVerb, lowerCasePath, node.fullPath,
 	)
 }
 
