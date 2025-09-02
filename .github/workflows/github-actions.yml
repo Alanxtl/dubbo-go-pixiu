@@ -43,11 +43,6 @@ jobs:
       - name: Check License Header
         uses: apache/skywalking-eyes/header@main
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-
       - name: Check Import Formatting
         run: |
           go install github.com/dubbogo/tools/cmd/imports-formatter@latest
