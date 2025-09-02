@@ -58,21 +58,21 @@ func TestQueryStringsMapper(t *testing.T) {
 
 	req := client.NewReq(context.TODO(), r, api)
 
-	params := newDubboTarget(api.IntegrationRequest.MappingParams)
+	params := newDubboTarget(api.MappingParams)
 	qs := queryStringsMapper{}
 	// Giving valid mapping params
-	err := qs.Map(api.IntegrationRequest.MappingParams[0], req, params, nil)
+	err := qs.Map(api.MappingParams[0], req, params, nil)
 	// it should not return error
 	assert.Nil(t, err)
 	// it should update the target value in target position from corresponding query value in request.
 	assert.Equal(t, params.Values[0], "12345")
 	assert.Equal(t, params.Types[0], "string")
 	// Giving valid mapping params and same target
-	err = qs.Map(api.IntegrationRequest.MappingParams[1], req, params, nil)
+	err = qs.Map(api.MappingParams[1], req, params, nil)
 	// it should return error when request does not contain the source parameter
 	assert.EqualError(t, err, "Query parameter [name] does not exist")
 	// Giving invalid mapping params that is not a number and same target
-	err = qs.Map(api.IntegrationRequest.MappingParams[2], req, params, nil)
+	err = qs.Map(api.MappingParams[2], req, params, nil)
 	// it should return error that points out the mapping param
 	assert.EqualError(t, err, "Parameter mapping {queryStrings.age jk int} incorrect")
 

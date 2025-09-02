@@ -206,10 +206,10 @@ func TestMappingParams(t *testing.T) {
 	req = client.NewReq(context.TODO(), r, api)
 	_, err = dClient.MapParams(req)
 	assert.Nil(t, err)
-	assert.Equal(t, req.API.DubboBackendConfig.ApplicationName, "19")
-	assert.Equal(t, req.API.DubboBackendConfig.Group, "1234567")
-	assert.Equal(t, req.API.DubboBackendConfig.Interface, "Joe")
-	assert.Equal(t, req.API.DubboBackendConfig.Method, "12345")
+	assert.Equal(t, req.API.ApplicationName, "19")
+	assert.Equal(t, req.API.Group, "1234567")
+	assert.Equal(t, req.API.Interface, "Joe")
+	assert.Equal(t, req.API.Method, "12345")
 }
 
 func TestBuildOption(t *testing.T) {
