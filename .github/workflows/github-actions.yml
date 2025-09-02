@@ -39,18 +39,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: Check License Header
+        uses: apache/skywalking-eyes/header@main
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Check License Header
-        uses: apache/skywalking-eyes/header@main
-
       - name: Check Formatting
         run: |
           go install github.com/dubbogo/tools/cmd/imports-formatter@latest
-          imports-formatter -l .
+          imports-formatter
           gofmt -l .
           git diff --exit-code
 
