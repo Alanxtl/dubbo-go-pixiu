@@ -201,9 +201,9 @@ func TestBaseResolver_BuildAPI(t *testing.T) {
 				assert.True(t, api.Enable)
 				assert.Equal(t, apiConf.HTTPRequest, api.InboundRequest.RequestType)
 				assert.Equal(t, tt.expectedRequestType, api.IntegrationRequest.RequestType)
-				assert.Equal(t, tt.expectedVersion, api.IntegrationRequest.DubboBackendConfig.Version)
-				assert.Equal(t, tt.expectedGroup, api.IntegrationRequest.DubboBackendConfig.Group)
-				assert.Equal(t, tt.mappingParams, api.IntegrationRequest.MappingParams)
+				assert.Equal(t, tt.expectedVersion, api.Version)
+				assert.Equal(t, tt.expectedGroup, api.Group)
+				assert.Equal(t, tt.mappingParams, api.MappingParams)
 			}
 		})
 	}

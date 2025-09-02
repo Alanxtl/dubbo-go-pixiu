@@ -92,13 +92,13 @@ func TestQueryStringsMapper(t *testing.T) {
 	}
 
 	req = client.NewReq(context.TODO(), r, api)
-	params = newDubboTarget(api.IntegrationRequest.MappingParams)
-	err = qs.Map(api.IntegrationRequest.MappingParams[0], req, params, nil)
+	params = newDubboTarget(api.MappingParams)
+	err = qs.Map(api.MappingParams[0], req, params, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, params.Values[1], "12345")
 	assert.Equal(t, params.Types[1], "string")
 	assert.Nil(t, params.Values[0])
-	err = qs.Map(api.IntegrationRequest.MappingParams[1], req, params, nil)
+	err = qs.Map(api.MappingParams[1], req, params, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, params.Types[0], "int")
 	assert.Equal(t, params.Values[0], 19)
@@ -116,10 +116,10 @@ func TestHeaderMapper(t *testing.T) {
 		},
 	}
 	hm := headerMapper{}
-	target := newDubboTarget(api.IntegrationRequest.MappingParams)
+	target := newDubboTarget(api.MappingParams)
 	req := client.NewReq(context.TODO(), r, api)
 
-	err := hm.Map(api.IntegrationRequest.MappingParams[0], req, target, nil)
+	err := hm.Map(api.MappingParams[0], req, target, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, target.Values[0], "1234567")
 	assert.Equal(t, target.Types[0], "string")
@@ -150,20 +150,20 @@ func TestBodyMapper(t *testing.T) {
 		},
 	}
 	bm := bodyMapper{}
-	target := newDubboTarget(api.IntegrationRequest.MappingParams)
+	target := newDubboTarget(api.MappingParams)
 	req := client.NewReq(context.TODO(), r, api)
 
-	err := bm.Map(api.IntegrationRequest.MappingParams[0], req, target, nil)
+	err := bm.Map(api.MappingParams[0], req, target, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, target.Values[0], "male")
 	assert.Equal(t, target.Types[0], "string")
 
-	err = bm.Map(api.IntegrationRequest.MappingParams[1], req, target, nil)
+	err = bm.Map(api.MappingParams[1], req, target, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, target.Values[1], "Biden")
 	assert.Equal(t, target.Types[1], "string")
 
-	err = bm.Map(api.IntegrationRequest.MappingParams[2], req, target, nil)
+	err = bm.Map(api.MappingParams[2], req, target, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, target.Types[2], "object")
 	assert.Equal(t, target.Values[2], map[string]any(map[string]any{
@@ -200,11 +200,11 @@ func TestURIMapper(t *testing.T) {
 	}
 
 	um := uriMapper{}
-	target := newDubboTarget(api.IntegrationRequest.MappingParams)
+	target := newDubboTarget(api.MappingParams)
 	req := client.NewReq(context.TODO(), r, api)
-	err := um.Map(api.IntegrationRequest.MappingParams[3], req, target, nil)
+	err := um.Map(api.MappingParams[3], req, target, nil)
 	assert.Nil(t, err)
-	err = um.Map(api.IntegrationRequest.MappingParams[2], req, target, nil)
+	err = um.Map(api.MappingParams[2], req, target, nil)
 	assert.Nil(t, err)
 	assert.Equal(t, target.Values[2], "joe")
 	assert.Equal(t, target.Types[2], "object")
@@ -332,12 +332,12 @@ func TestSetGenericTarget(t *testing.T) {
 	opt = DefaultMapOption[optionKeyInterface]
 	err = setGenericTarget(req, opt, target, "testingInterface", "")
 	assert.Nil(t, err)
-	assert.Equal(t, req.API.IntegrationRequest.Interface, "testingInterface")
+	assert.Equal(t, req.API.Interface, "testingInterface")
 
 	opt = DefaultMapOption[optionKeyApplication]
 	err = setGenericTarget(req, opt, target, "testingApplication", "")
 	assert.Nil(t, err)
-	assert.Equal(t, req.API.IntegrationRequest.ApplicationName, "testingApplication")
+	assert.Equal(t, req.API.ApplicationName, "testingApplication")
 }
 
 func TestGetGenericMapTo(t *testing.T) {

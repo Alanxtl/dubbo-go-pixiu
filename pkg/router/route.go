@@ -61,7 +61,7 @@ func (rt *Route) ClearAPI() error {
 
 func (rt *Route) RemoveAPI(api router.API) {
 	lowerCasePath := strings.ToLower(api.URLPattern)
-	key := getTrieKey(api.Method.HTTPVerb, lowerCasePath, false)
+	key := getTrieKey(api.HTTPVerb, lowerCasePath, false)
 
 	rt.lock.Lock()
 	defer rt.lock.Unlock()
@@ -122,7 +122,7 @@ func getTrieKey(method config.HTTPVerb, path string, isPrefix bool) string {
 // PutAPI puts an api into the resource
 func (rt *Route) PutAPI(api router.API) error {
 	lowerCasePath := strings.ToLower(api.URLPattern)
-	key := getTrieKey(api.Method.HTTPVerb, lowerCasePath, false)
+	key := getTrieKey(api.HTTPVerb, lowerCasePath, false)
 	node, ok := rt.getNode(key)
 	if !ok {
 		rn := &Node{
@@ -144,7 +144,7 @@ func (rt *Route) PutAPI(api router.API) error {
 // PutOrUpdateAPI puts or updates an api into the resource
 func (rt *Route) PutOrUpdateAPI(api router.API) error {
 	lowerCasePath := strings.ToLower(api.URLPattern)
-	key := getTrieKey(api.Method.HTTPVerb, lowerCasePath, false)
+	key := getTrieKey(api.HTTPVerb, lowerCasePath, false)
 	rn := &Node{
 		fullPath: lowerCasePath,
 		method:   &api.Method,
