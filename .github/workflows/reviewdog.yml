@@ -19,17 +19,15 @@
 name: reviewdog
 on: [ pull_request ]
 jobs:
-  golangci-lint:
-    name: review
+  golangci:
+    name: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
         with:
-          persist-credentials: false
-          submodules: true
-
+          go-version: stable
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          args: --timeout=10m
+          version: v2.4.0
