@@ -82,7 +82,7 @@ func (rt *Route) RemoveAPI(api router.API) {
 				return
 			}
 			// avoid thread safe problem
-			clusters := strings.Split(bizInfo.method.HTTPBackendConfig.URL, ",")
+			clusters := strings.Split(bizInfo.method.URL, ",")
 			if len(clusters) > 1 {
 				var i int
 				for i = 0; i < len(clusters); i++ {
@@ -96,10 +96,10 @@ func (rt *Route) RemoveAPI(api router.API) {
 				}
 
 				// operate pointer has no necessary to call update api
-				bizInfo.method.HTTPBackendConfig.URL = strings.Join(append(clusters[:i], clusters[i+1:]...), ",")
+				bizInfo.method.URL = strings.Join(append(clusters[:i], clusters[i+1:]...), ",")
 			} else {
 				// double check, avoid removing api that does not exists
-				if !strings.Contains(bizInfo.method.HTTPBackendConfig.URL, api.URL) {
+				if !strings.Contains(bizInfo.method.URL, api.URL) {
 					return
 				}
 				// if backend has only one node, then just directly remove
@@ -166,7 +166,7 @@ func (rt *Route) PutOrUpdateAPI(api router.API) error {
 			if bizInfo == nil || !ok {
 				return errors.New("bizInfoInterface.(*Node) failed")
 			}
-			if !strings.Contains(bizInfo.method.HTTPBackendConfig.URL, api.URL) {
+			if !strings.Contains(bizInfo.method.URL, api.URL) {
 				// operate pointer has no necessary to call update api
 				bizInfo.method.HTTPBackendConfig.URL = bizInfo.method.HTTPBackendConfig.URL + "," + api.URL
 			}

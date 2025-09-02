@@ -176,7 +176,7 @@ func (dc *Client) Call(req *client.Request) (res any, err error) {
 		return nil, errors.New("map parameters failed")
 	}
 
-	dm := req.API.Method.IntegrationRequest
+	dm := req.API.IntegrationRequest
 	method := dm.Method
 	types := []string{}
 	vals := []hessian.Object{}
@@ -235,7 +235,7 @@ func (dc *Client) genericArgs(req *client.Request) (any, error) {
 
 // MapParams params mapping to api.
 func (dc *Client) MapParams(req *client.Request) (any, error) {
-	r := req.API.Method.IntegrationRequest
+	r := req.API.IntegrationRequest
 	values := newDubboTarget(r.MappingParams)
 	if dc.dubboProxyConfig != nil && dc.dubboProxyConfig.IsDefaultMap {
 		values = newDubboTarget(defaultMappingParams)

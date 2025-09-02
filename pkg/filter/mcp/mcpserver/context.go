@@ -90,10 +90,10 @@ func (ctx *MCPContext) StoreMCPDataInParams() {
 
 // LoadMCPDataFromParams loads MCP data from HttpContext.Params
 func (ctx *MCPContext) LoadMCPDataFromParams() {
-	if ctx.HttpContext.Params == nil {
+	if ctx.Params == nil {
 		return
 	}
-	if data, ok := ctx.HttpContext.Params[MCPDataKey].(*MCPData); ok {
+	if data, ok := ctx.Params[MCPDataKey].(*MCPData); ok {
 		ctx.mcpData = data
 	}
 }

@@ -80,7 +80,7 @@ func SingletonTripleClient(protoset []string) *Client {
 
 // Call invoke service
 func (tc *Client) Call(req *client.Request) (res any, err error) {
-	address := strings.Split(req.API.IntegrationRequest.HTTPBackendConfig.URL, ":")
+	address := strings.Split(req.API.HTTPBackendConfig.URL, ":")
 	p := proxy.NewProxy()
 	targetURL := &url.URL{
 		Scheme: address[0],
