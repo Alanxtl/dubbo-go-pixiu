@@ -571,7 +571,7 @@ func getMethodId() int {
 
 func loopGetId(k string) int {
 
-	for true {
+	for {
 
 		rawClient := config.Client.GetRawClient()
 		if rawClient == nil {

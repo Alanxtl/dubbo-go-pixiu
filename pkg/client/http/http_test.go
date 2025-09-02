@@ -122,7 +122,7 @@ func TestParseURL(t *testing.T) {
 
 	requestParams = newRequestParams()
 	requestParams.URIParams.Set("id", "12345")
-	req.API.HTTPBackendConfig.Path = ""
+	req.API.Path = ""
 	parsedURL, err = hClient.parseURL(req, *requestParams)
 	assert.Equal(t, parsedURL, "http://abc.com")
 	assert.Nil(t, err)

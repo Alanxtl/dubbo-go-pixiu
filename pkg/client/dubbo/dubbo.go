@@ -309,17 +309,17 @@ func (dc *Client) create(key string, irequest fc.IntegrationRequest) *generic.Ge
 		RegistryIDs:   registerIds,
 		Protocol:      dubbo.DUBBO,
 		Generic:       "true",
-		Version:       irequest.DubboBackendConfig.Version,
+		Version:       irequest.Version,
 		Group:         irequest.Group,
 		Loadbalance:   dc.dubboProxyConfig.LoadBalance,
 		Retries:       dc.dubboProxyConfig.Retries,
 	}
 
 	if refConf.Retries == "" {
-		if len(irequest.DubboBackendConfig.Retries) == 0 {
+		if len(irequest.Retries) == 0 {
 			refConf.Retries = "3"
 		} else {
-			refConf.Retries = irequest.DubboBackendConfig.Retries
+			refConf.Retries = irequest.Retries
 		}
 	}
 

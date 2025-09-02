@@ -82,10 +82,10 @@ func (ctx *MCPContext) IsMCPToolCall() bool {
 
 // StoreMCPDataInParams stores MCP data in HttpContext.Params for passing through the filter chain
 func (ctx *MCPContext) StoreMCPDataInParams() {
-	if ctx.HttpContext.Params == nil {
-		ctx.HttpContext.Params = make(map[string]any)
+	if ctx.Params == nil {
+		ctx.Params = make(map[string]any)
 	}
-	ctx.HttpContext.Params[MCPDataKey] = ctx.mcpData
+	ctx.Params[MCPDataKey] = ctx.mcpData
 }
 
 // LoadMCPDataFromParams loads MCP data from HttpContext.Params

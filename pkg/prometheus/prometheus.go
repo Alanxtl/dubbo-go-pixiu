@@ -220,7 +220,7 @@ type Prometheus struct {
 // PushGateway contains the configuration for pushing to a Prometheus pushgateway (optional)
 type PushGateway struct {
 	CounterPush           bool
-	PushIntervalSeconds   time.Duration
+	PushInterval          time.Duration
 	PushIntervalThreshold int
 	PushGatewayURL        string
 	Job                   string

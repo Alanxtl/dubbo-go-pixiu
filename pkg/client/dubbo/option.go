@@ -158,7 +158,7 @@ func (opt *valuesOpt) Action(target, val any) error {
 	} else if val, ok := v[0].(string); !ok || val != "" {
 		toVals = []any{v[0]}
 	}
-	if !(len(toTypes) != 0 && len(toTypes) == len(toVals)) {
+	if len(toTypes) == 0 || len(toTypes) != len(toVals) {
 		dubboTarget.Types = toTypes
 		dubboTarget.Values = toVals
 		return nil
