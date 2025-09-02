@@ -38,7 +38,7 @@ import (
 func TestQueryStringsMapper(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/mock/test?id=12345&age=19", bytes.NewReader([]byte("")))
 	api := mock.GetMockAPI(config.MethodGet, "/mock/test")
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:    "queryStrings.id",
 			MapTo:   "0",
@@ -78,7 +78,7 @@ func TestQueryStringsMapper(t *testing.T) {
 
 	r, _ = http.NewRequest("GET", "/mock/test?id=12345&age=19", bytes.NewReader([]byte("")))
 	api = mock.GetMockAPI(config.MethodGet, "/mock/test")
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:    "queryStrings.id",
 			MapTo:   "1",
@@ -108,7 +108,7 @@ func TestHeaderMapper(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/mock/test?id=12345&age=19", bytes.NewReader([]byte("")))
 	r.Header.Set("Auth", "1234567")
 	api := mock.GetMockAPI(config.MethodGet, "/mock/test")
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:    "headers.Auth",
 			MapTo:   "0",
@@ -132,7 +132,7 @@ func TestBodyMapper(t *testing.T) {
 	r, _ := http.NewRequest("POST", "/mock/test?id=12345&age=19", bytes.NewReader([]byte(`{"sex": "male", "name":{"firstName": "Joe", "lastName": "Biden"}}`)))
 	r.Header.Set("Auth", "1234567")
 	api := mock.GetMockAPI(config.MethodGet, "/mock/test")
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:    "requestBody.sex",
 			MapTo:   "0",
@@ -176,7 +176,7 @@ func TestURIMapper(t *testing.T) {
 		`{"sex": "male", "name":{"firstName": "Joe", "lastName": "Biden"}}`)))
 	r.Header.Set("Auth", "1234567")
 	api := mock.GetMockAPI(config.MethodGet, "/mock/:id/:name")
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:    "requestBody.sex",
 			MapTo:   "0",

@@ -168,7 +168,7 @@ func (rt *Route) PutOrUpdateAPI(api router.API) error {
 			}
 			if !strings.Contains(bizInfo.method.URL, api.URL) {
 				// operate pointer has no necessary to call update api
-				bizInfo.method.HTTPBackendConfig.URL = bizInfo.method.HTTPBackendConfig.URL + "," + api.URL
+				bizInfo.method.URL = bizInfo.method.HTTPBackendConfig.URL + "," + api.URL
 			}
 		}
 	} else {

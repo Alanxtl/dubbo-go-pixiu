@@ -54,7 +54,7 @@ func TestMapParams(t *testing.T) {
 	assert.Equal(t, string(rawBody),
 		"{\"id\":\"12345\",\"age\":\"19\",\"testStruct\":{\"name\":\"mock\",\"test\":\"happy\",\"nickName\":\"trump\"}}")
 
-	api.IntegrationRequest.MappingParams = []config.MappingParam{
+	api.MappingParams = []config.MappingParam{
 		{
 			Name:  "queryStrings.team",
 			MapTo: "queryStrings.team",
