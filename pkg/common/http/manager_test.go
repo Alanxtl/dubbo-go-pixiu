@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -219,11 +220,11 @@ func TestStreamingResponse(t *testing.T) {
 
 	// event waiting test
 	for {
-		receivedEvents := httpCtx.Writer.(*StreamRecorder).receivedBuf
 		select {
 		case event := <-eventCh:
 			logger.Info("Received event: %s", strings.ReplaceAll(event, "\n", "\\n"))
 		case <-done:
+			receivedEvents := httpCtx.Writer.(*StreamRecorder).GetReceivedBuf()
 			assert.Equal(t, 3, len(receivedEvents), "Should receive 3 events")
 			return
 		case <-time.After(5 * time.Second):
@@ -237,6 +238,7 @@ func TestStreamingResponse(t *testing.T) {
 type StreamRecorder struct {
 	http.ResponseWriter
 	http.Flusher
+	mu          sync.Mutex
 	receivedBuf []string
 	headers     http.Header
 	status      int
@@ -259,8 +261,18 @@ func (r *StreamRecorder) WriteHeader(statusCode int) {
 
 func (r *StreamRecorder) Write(data []byte) (int, error) {
 	eventCh <- string(data)
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.receivedBuf = append(r.receivedBuf, string(data))
 	return len(data), nil
+}
+
+func (r *StreamRecorder) GetReceivedBuf() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	bufCopy := make([]string, len(r.receivedBuf))
+	copy(bufCopy, r.receivedBuf)
+	return bufCopy
 }
 
 func (r *StreamRecorder) Flush() {
@@ -286,6 +298,7 @@ func NewTestServerWithURL(URL string, handler http.Handler) (*httptest.Server, e
 // StreamHTTPRecorder Used to capture and test streaming HTTP responses over channels
 type StreamHTTPRecorder struct {
 	http.ResponseWriter
+	mu          sync.Mutex
 	receivedBuf []string
 	headers     http.Header
 	status      int
@@ -310,12 +323,22 @@ func (r *StreamHTTPRecorder) WriteHeader(statusCode int) {
 
 func (r *StreamHTTPRecorder) Write(data []byte) (int, error) {
 	eventCh <- string(data)
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.receivedBuf = append(r.receivedBuf, string(data))
 	return len(data), nil
 }
 
 func (r *StreamHTTPRecorder) Flush() {
 	r.flushCount++
+}
+
+func (r *StreamHTTPRecorder) GetReceivedBuf() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	bufCopy := make([]string, len(r.receivedBuf))
+	copy(bufCopy, r.receivedBuf)
+	return bufCopy
 }
 
 // Test a variety of common streaming HTTP response types
@@ -418,12 +441,12 @@ func testStreamableResponse(t *testing.T, contentType string) {
 	// collect and validate responses
 	receivedChunks := 0
 	for {
-		receivedEvents := httpCtx.Writer.(*StreamHTTPRecorder).receivedBuf
 		select {
 		case event := <-eventCh:
 			logger.Info("Received chunk: %s", event)
 			receivedChunks++
 		case <-done:
+			receivedEvents := httpCtx.Writer.(*StreamHTTPRecorder).GetReceivedBuf()
 			assert.Equal(t, 5, len(receivedEvents), "Should receive 5 chunks")
 			return
 		case <-time.After(5 * time.Second):
