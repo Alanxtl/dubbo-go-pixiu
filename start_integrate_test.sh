@@ -21,7 +21,7 @@ set -e
 set -x
 
 readonly PIXIU_ROOT_DIR=$(pwd)
-readonly SAMPLES_BRANCH="${GITHUB_BASE_REF:-develop}"
+readonly SAMPLES_BRANCH="main"
 readonly SAMPLES_REPO_URL="https://github.com/apache/dubbo-go-pixiu-samples.git"
 readonly SAMPLES_CLONE_DIR="integrate_samples"
 

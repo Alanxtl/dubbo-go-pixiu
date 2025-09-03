@@ -52,7 +52,7 @@ jobs:
 
   golangci:
     needs: license-check-and-import-format
-    name: lint
+    name: Golang Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
