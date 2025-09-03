@@ -18,7 +18,6 @@
 #
 
 set -e
-set -x
 
 readonly PIXIU_ROOT_DIR=$(pwd)
 readonly SAMPLES_BRANCH="main"

@@ -76,6 +76,23 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - name: Cache Zookeeper JAR
+        id: cache-zk-jar
+        uses: actions/cache@v4
+        with:
+          path: pkg/registry/zookeeper-4unittest/contrib/fatjar
+          key: ${{ runner.os }}-zookeeper-jar-3.4.9
+
+      - name: Download Zookeeper JAR if not cached
+        if: steps.cache-zk-jar.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache miss. Downloading Zookeeper JAR..."
+          zkJarName="zookeeper-3.4.9-fatjar.jar"
+          remoteJarUrl="https://github.com/dubbogo/resources/raw/master/zookeeper-4unitest/contrib/fatjar/${zkJarName}"
+          zkJarPath="pkg/registry/zookeeper-4unittest/contrib/fatjar"
+          mkdir -p ${zkJarPath}
+          wget -P "${zkJarPath}" ${remoteJarUrl}
+
       - name: Run Tests and Generate Coverage
         run: |
           if [ -f "before_ut.sh" ]; then
