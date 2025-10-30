@@ -22,7 +22,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 )
@@ -115,14 +114,11 @@ func createBrokenJSON() string {
 }
 
 type MockedNacosConfigClient struct {
-	mu                sync.Mutex
 	configs           map[string]any
 	configListenerMap map[string][]func(string, string, string, string)
 }
 
-func (m *MockedNacosConfigClient) GetConfig(param vo.ConfigParam) (string, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m MockedNacosConfigClient) GetConfig(param vo.ConfigParam) (string, error) {
 	if result, exist := m.configs[param.DataId+"$$"+param.Group]; exist {
 		config, ok := result.(string)
 		if ok {
@@ -139,19 +135,17 @@ func (m *MockedNacosConfigClient) GetConfig(param vo.ConfigParam) (string, error
 	return "", nil
 }
 
-func (m *MockedNacosConfigClient) PublishConfig(param vo.ConfigParam) (bool, error) {
+func (m MockedNacosConfigClient) PublishConfig(_ vo.ConfigParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m *MockedNacosConfigClient) DeleteConfig(param vo.ConfigParam) (bool, error) {
+func (m MockedNacosConfigClient) DeleteConfig(_ vo.ConfigParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m *MockedNacosConfigClient) ListenConfig(params vo.ConfigParam) (err error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m MockedNacosConfigClient) ListenConfig(params vo.ConfigParam) (err error) {
 	if _, ok := m.configListenerMap[params.Group]; !ok {
 		m.configListenerMap[params.Group] = []func(string, string, string, string){}
 	}
@@ -159,25 +153,12 @@ func (m *MockedNacosConfigClient) ListenConfig(params vo.ConfigParam) (err error
 	return nil
 }
 
-func (m *MockedNacosConfigClient) CancelListenConfig(params vo.ConfigParam) (err error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m MockedNacosConfigClient) CancelListenConfig(params vo.ConfigParam) (err error) {
 	delete(m.configListenerMap, params.DataId+"$$"+params.Group)
 	return nil
 }
 
-func (m *MockedNacosConfigClient) GetListener(key string, index int) func(string, string, string, string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if listeners, ok := m.configListenerMap[key]; ok && len(listeners) > index {
-		return listeners[index]
-	}
-	return nil
-}
-
-func (m *MockedNacosConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m MockedNacosConfigClient) SearchConfig(param vo.SearchConfigParam) (*model.ConfigPage, error) {
 	dataIdRegex := strings.ReplaceAll(param.DataId, "*", ".*")
 	groupRegex := strings.ReplaceAll(param.Group, "*", ".*")
 	result := []model.ConfigItem{}
@@ -213,7 +194,7 @@ func (m *MockedNacosConfigClient) SearchConfig(param vo.SearchConfigParam) (*mod
 	}, nil
 }
 
-func (m *MockedNacosConfigClient) CloseClient() {
+func (m MockedNacosConfigClient) CloseClient() {
 	//TODO implement me
 	panic("implement me")
 }
@@ -222,22 +203,22 @@ type MockedNacosNamingClient struct {
 	listenerMap map[string][]func(services []model.Instance, err error)
 }
 
-func (m MockedNacosNamingClient) RegisterInstance(param vo.RegisterInstanceParam) (bool, error) {
+func (m MockedNacosNamingClient) RegisterInstance(_ vo.RegisterInstanceParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m MockedNacosNamingClient) BatchRegisterInstance(param vo.BatchRegisterInstanceParam) (bool, error) {
+func (m MockedNacosNamingClient) BatchRegisterInstance(_ vo.BatchRegisterInstanceParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m MockedNacosNamingClient) DeregisterInstance(param vo.DeregisterInstanceParam) (bool, error) {
+func (m MockedNacosNamingClient) DeregisterInstance(_ vo.DeregisterInstanceParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m MockedNacosNamingClient) UpdateInstance(param vo.UpdateInstanceParam) (bool, error) {
+func (m MockedNacosNamingClient) UpdateInstance(_ vo.UpdateInstanceParam) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -255,17 +236,17 @@ func (m MockedNacosNamingClient) GetService(param vo.GetServiceParam) (model.Ser
 	}, nil
 }
 
-func (m MockedNacosNamingClient) SelectAllInstances(param vo.SelectAllInstancesParam) ([]model.Instance, error) {
+func (m MockedNacosNamingClient) SelectAllInstances(_ vo.SelectAllInstancesParam) ([]model.Instance, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m MockedNacosNamingClient) SelectInstances(param vo.SelectInstancesParam) ([]model.Instance, error) {
+func (m MockedNacosNamingClient) SelectInstances(_ vo.SelectInstancesParam) ([]model.Instance, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m MockedNacosNamingClient) SelectOneHealthyInstance(param vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
+func (m MockedNacosNamingClient) SelectOneHealthyInstance(_ vo.SelectOneHealthInstanceParam) (*model.Instance, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -278,11 +259,11 @@ func (m MockedNacosNamingClient) Subscribe(param *vo.SubscribeParam) error {
 	return nil
 }
 
-func (m MockedNacosNamingClient) Unsubscribe(param *vo.SubscribeParam) error {
+func (m MockedNacosNamingClient) Unsubscribe(_ *vo.SubscribeParam) error {
 	return nil
 }
 
-func (m MockedNacosNamingClient) GetAllServicesInfo(param vo.GetAllServiceInfoParam) (model.ServiceList, error) {
+func (m MockedNacosNamingClient) GetAllServicesInfo(_ vo.GetAllServiceInfoParam) (model.ServiceList, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -307,7 +288,7 @@ func TestNacosRegistryClient_ListMcpServer(t *testing.T) {
 	}
 
 	client := NacosRegistryClient{
-		configClient: &MockedNacosConfigClient{configs: mockedConfigs},
+		configClient: MockedNacosConfigClient{configs: mockedConfigs},
 	}
 
 	servers, err := client.ListMcpServer()
@@ -353,7 +334,7 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 	serverConfigKey113 := fmt.Sprintf("%s-%s-mcp-server.json%smcp-server", testMcpServerID, testVersion113, configKeySeparator)
 	toolsConfigKey113 := fmt.Sprintf("%s-%s-mcp-tools.json%smcp-tools", testMcpServerID, testVersion113, configKeySeparator)
 
-	configClient := &MockedNacosConfigClient{
+	configClient := MockedNacosConfigClient{
 		configs: map[string]any{
 			versionConfigKey:   createExploreServerVersionConfig(testVersion112),
 			serverConfigKey112: createMcpServerConfig(testMcpServerID, testVersion112, testServiceName),
@@ -385,30 +366,15 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 
 	// Set up listener for configuration changes
 	var newConfig *McpServerConfig
-	var configMu sync.RWMutex
-
-	// Helper functions to safely access newConfig
-	getConfig := func() *McpServerConfig {
-		configMu.RLock()
-		defer configMu.RUnlock()
-		return newConfig
-	}
-
-	setConfig := func(cfg *McpServerConfig) {
-		configMu.Lock()
-		defer configMu.Unlock()
-		newConfig = cfg
-	}
-
 	err = client.ListenToMcpServer(testMcpServerID, func(info *McpServerConfig) {
-		setConfig(info)
+		newConfig = info
 	})
 	if err != nil {
 		t.Fatalf("Failed to start listening to MCP server: %v", err)
 	}
 
 	// Wait for initial configuration to be loaded
-	for i := 0; i < testRetryMaxAttempts && getConfig() == nil; i++ {
+	for i := 0; i < testRetryMaxAttempts && newConfig == nil; i++ {
 		time.Sleep(testRetryInterval)
 	}
 
@@ -418,21 +384,19 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 	// Replace nacos template with processed version
 	expectedToolsConfig = strings.ReplaceAll(expectedToolsConfig, fmt.Sprintf("${nacos.%s/%s}", testConfigKey, testConfigKey), fmt.Sprintf(".config.credentials.%s", testCredentialKey))
 
-	cfg := getConfig()
-	assert.Equal(t, expectedServerConfig, cfg.ServerSpecConfig)
-	assert.Equal(t, expectedToolsConfig, cfg.ToolsSpecConfig)
-	assert.Equal(t, 1, len(cfg.Credentials))
-	assert.Equal(t, map[string]any{"key": testSecretKey}, cfg.Credentials[testCredentialKey])
+	assert.Equal(t, expectedServerConfig, newConfig.ServerSpecConfig)
+	assert.Equal(t, expectedToolsConfig, newConfig.ToolsSpecConfig)
+	assert.Equal(t, 1, len(newConfig.Credentials))
+	assert.Equal(t, map[string]any{"key": testSecretKey}, newConfig.Credentials[testCredentialKey])
 
 	// Test case 1: Change tool nacos template reference
-	listener := configClient.GetListener(toolsConfigKey112, 0)
+	listener := configClient.configListenerMap[toolsConfigKey112][0]
 	updatedToolsConfig := createMcpToolsConfig(fmt.Sprintf("%s/%s", testConfigKey1, testConfigKey1))
 	listener(testNamespace, "mcp-tools", toolsConfigKey112, updatedToolsConfig)
 
 	// Wait for tools update to propagate
 	for i := 0; i < testRetryMaxAttempts; i++ {
-		cfg := getConfig()
-		if cfg != nil && strings.Contains(cfg.ToolsSpecConfig, testCredentialKey1) {
+		if newConfig != nil && strings.Contains(newConfig.ToolsSpecConfig, testCredentialKey1) {
 			break
 		}
 		time.Sleep(testRetryInterval)
@@ -440,33 +404,30 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 
 	// Verify updated tools configuration
 	expectedUpdatedToolsConfig := strings.ReplaceAll(updatedToolsConfig, fmt.Sprintf("${nacos.%s/%s}", testConfigKey1, testConfigKey1), fmt.Sprintf(".config.credentials.%s", testCredentialKey1))
-	cfg = getConfig()
-	assert.Equal(t, expectedUpdatedToolsConfig, cfg.ToolsSpecConfig)
-	assert.Equal(t, 1, len(cfg.Credentials))
-	assert.Equal(t, map[string]any{"key": testSecretKey1}, cfg.Credentials[testCredentialKey1])
+	assert.Equal(t, expectedUpdatedToolsConfig, newConfig.ToolsSpecConfig)
+	assert.Equal(t, 1, len(newConfig.Credentials))
+	assert.Equal(t, map[string]any{"key": testSecretKey1}, newConfig.Credentials[testCredentialKey1])
 
 	// Test case 2: Change backend service name
-	serviceListener := configClient.GetListener(serverConfigKey112, 0)
+	serviceListener := configClient.configListenerMap[serverConfigKey112][0]
 	updatedServerConfig := createMcpServerConfig(testMcpServerID, testVersion112, testServiceNameNew)
 	serviceListener(testNamespace, "mcp-server", serverConfigKey112, updatedServerConfig)
 
 	for i := 0; i < testRetryMaxAttempts; i++ {
-		cfg := getConfig()
-		if cfg != nil && strings.Contains(cfg.ServerSpecConfig, testServiceNameNew) {
+		if newConfig != nil && strings.Contains(newConfig.ServerSpecConfig, testServiceNameNew) {
 			break
 		}
 		time.Sleep(testRetryInterval)
 	}
 
 	// Test case 3: Publish new version of MCP server
-	versionListener := configClient.GetListener(versionConfigKey, 0)
+	versionListener := configClient.configListenerMap[versionConfigKey][0]
 	updatedVersionConfig := createExploreServerVersionConfig(testVersion113)
 	versionListener(testNamespace, testGroupNameMcpVersions, versionConfigKey, updatedVersionConfig)
 
 	// Wait for version update to trigger server config change
 	for i := 0; i < testRetryMaxAttempts; i++ {
-		cfg := getConfig()
-		if cfg != nil && strings.Contains(cfg.ServerSpecConfig, fmt.Sprintf("\"version\":\"%s\"", testVersion113)) {
+		if newConfig != nil && strings.Contains(newConfig.ServerSpecConfig, fmt.Sprintf("\"version\":\"%s\"", testVersion113)) {
 			break
 		}
 		time.Sleep(testRetryInterval)
@@ -474,8 +435,7 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 
 	// Wait for tools config to update to new version reference
 	for i := 0; i < testRetryMaxAttempts; i++ {
-		cfg := getConfig()
-		if cfg != nil && strings.Contains(cfg.ToolsSpecConfig, testCredentialKey3) {
+		if newConfig != nil && strings.Contains(newConfig.ToolsSpecConfig, testCredentialKey3) {
 			break
 		}
 		time.Sleep(testRetryInterval)
@@ -486,9 +446,8 @@ func TestNacosRegistryClient_ListenToMcpServer(t *testing.T) {
 	expectedFinalToolsConfig := createMcpToolsConfig(fmt.Sprintf("%s/%s", testConfigKey3, testConfigKey3))
 	expectedFinalToolsConfig = strings.ReplaceAll(expectedFinalToolsConfig, fmt.Sprintf("${nacos.%s/%s}", testConfigKey3, testConfigKey3), fmt.Sprintf(".config.credentials.%s", testCredentialKey3))
 
-	cfg = getConfig()
-	assert.Equal(t, expectedFinalServerConfig, cfg.ServerSpecConfig)
-	assert.Equal(t, expectedFinalToolsConfig, cfg.ToolsSpecConfig)
-	assert.Equal(t, 1, len(cfg.Credentials))
-	assert.Equal(t, map[string]any{"key": testSecretKey3}, cfg.Credentials[testCredentialKey3])
+	assert.Equal(t, expectedFinalServerConfig, newConfig.ServerSpecConfig)
+	assert.Equal(t, expectedFinalToolsConfig, newConfig.ToolsSpecConfig)
+	assert.Equal(t, 1, len(newConfig.Credentials))
+	assert.Equal(t, map[string]any{"key": testSecretKey3}, newConfig.Credentials[testCredentialKey3])
 }
