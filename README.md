@@ -24,8 +24,11 @@ With Pixiu, you can:
 * **Unified Access to AI Models:**
   Connect effortlessly to OpenAI, Anthropic, or any **custom / on-prem LLM or MCP** service through a single, consistent API gateway layer.
 
+* **MCP Server Exposure:**
+  Expose your existing HTTP APIs and backend services as MCP Servers through Pixiu, enabling AI applications to directly invoke your business logic.
+
 * **Flexible Extension for AI Workloads:**
-  Apply authentication, caching, rate-limiting, retry policy, observability, or even model orchestration — all through Pixiu’s plugin system.
+  Apply authentication, caching, rate-limiting, retry policy, observability, or even model orchestration — all through Pixiu's plugin system.
 
 * **Multi-Tenant & Cost-Efficient:**
   Implement fine-grained cost control, auditing, and token accounting for large-scale AI deployments.
@@ -128,6 +131,9 @@ After starting, you can access the management plane by opening `http://localhost
 ## Community & Contribution
 
 We warmly welcome all forms of contributions\! Whether it's submitting an issue, proposing a new feature, or contributing code, your participation is vital to the project.
+
+* **Contribution Workflow:**
+  To submit a Pull Request, please submit it to the [dubbo-go-pixiu/dubbo-go-pixiu](https://github.com/dubbo-go-pixiu/dubbo-go-pixiu/) repository. Your code will undergo automated review and manual verification by project maintainers, and will be automatically synchronized to the Apache official repository upon approval.
 
 * **Join Our Community**:
 
