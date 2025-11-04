@@ -112,9 +112,13 @@ docker-compose up -d
 
 ![pixiu-admin.png](./docs/images/pixiu-admin.png)
 
-## 工具
+## Dubbo-go-pixiu 生态系统的其他项目
 
-* **[Benchmark](./tools/benchmark)**：Pixiu 性能测试工具（目前版本较旧，正在更新中）。
+-   **[pixiu-samples](https://github.com/apache/dubbo-go-pixiu-samples)**
+Pixiu-samples 提供了多个使用 dubbo-go-pixiu 的示例项目，涵盖了从基本的 API 网关功能到复杂的 AI 网关场景，帮助用户快速上手和理解 pixiu 的各种功能。
+-   **[pixiu-admin](https://github.com/apache/dubbo-go-pixiu/tree/develop/admin)** Dubbo-go-pixiu Admin 是 dubbo-go-pixiu 网关的综合管理平台。它提供了一个集中的控制面板，用于通过基于 Web 的用户界面和 RESTful API 来配置、监控和管理网关资源。
+-   **[pixiu-api](https://github.com/dubbo-go-pixiu/pixiu-api)** Dubbo-go-pixiu API 是 dubbo-go-pixiu 生态系统的 API 模型。用于与 pixiu-admin 的集成。
+-   **[benchmark](https://github.com/apache/dubbo-go-pixiu/tree/develop/tools/benchmark)** 该基准测试系统允许用户在各种负载条件下测量和分析关键性能指标，如延迟、吞吐量和每秒查询数 (QPS)，以评估协议转换过程的效率。
 
 ## 社区与贡献
 

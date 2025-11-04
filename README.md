@@ -114,11 +114,16 @@ After starting, you can access the management plane by opening `http://localhost
 
 ![pixiu-admin.png](./docs/images/pixiu-admin.png)
 
-## Tools
+## Other Projects in the Dubbo-Go-Pixiu Ecosystem
 
-* **[Benchmark](./tools/benchmark)**: The benchmark of dubbo-fo-pixiu, currently outdated, we are working on updating it.
-
-
+* **[pixiu-samples](https://github.com/apache/dubbo-go-pixiu-samples)**
+  The official sample repository for Dubbo-Go-Pixiu, demonstrating various use cases and configurations.
+* **[pixiu-admin](https://github.com/apache/dubbo-go-pixiu/tree/develop/admin)**
+  Dubbo-Go-Pixiu Admin is a comprehensive management platform for the Dubbo-Go-Pixiu gateway. It provides a centralized control plane for configuring, monitoring, and managing gateway resources via a web-based UI and RESTful APIs.
+* **[pixiu-api](https://github.com/dubbo-go-pixiu/pixiu-api)**
+  Dubbo-Go-Pixiu API provides the API models for the ecosystem and integrates with Pixiu Admin.
+* **[benchmark](https://github.com/apache/dubbo-go-pixiu/tree/develop/tools/benchmark)**
+  The benchmarking system allows users to measure and analyze key performance metrics—such as latency, throughput, and QPS—under various load conditions to evaluate protocol conversion efficiency.
 
 ## Community & Contribution
 
