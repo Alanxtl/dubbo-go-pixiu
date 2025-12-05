@@ -28,7 +28,6 @@ import (
 import (
 	dubboCommon "dubbo.apache.org/dubbo-go/v3/common"
 	dubboConst "dubbo.apache.org/dubbo-go/v3/common/constant"
-	"dubbo.apache.org/dubbo-go/v3/metadata/definition"
 	dr "dubbo.apache.org/dubbo-go/v3/registry"
 	"dubbo.apache.org/dubbo-go/v3/registry/servicediscovery"
 	"dubbo.apache.org/dubbo-go/v3/remoting/zookeeper/curator_discovery"
@@ -47,6 +46,32 @@ import (
 )
 
 var _ registry.Listener = new(applicationServiceListener)
+
+// ServiceDefinition is the describer of service definition
+type ServiceDefinition struct {
+	CanonicalName string
+	CodeSource    string
+	Methods       []MethodDefinition
+	Types         []TypeDefinition
+}
+
+// MethodDefinition is the describer of method definition
+type MethodDefinition struct {
+	Name           string
+	ParameterTypes []string
+	ReturnType     string
+	Parameters     []TypeDefinition
+}
+
+// TypeDefinition is the describer of type definition
+type TypeDefinition struct {
+	ID              string
+	Type            string
+	Items           []TypeDefinition
+	Enums           []string
+	Properties      map[string]TypeDefinition
+	TypeBuilderName string
+}
 
 // applicationServiceListener normally monitors the /services/[:application]
 type applicationServiceListener struct {
@@ -257,7 +282,7 @@ func (asl *applicationServiceListener) getMethods(in string) ([]string, error) {
 		return nil, err
 	}
 
-	sd := &definition.ServiceDefinition{}
+	sd := &ServiceDefinition{}
 	err = json.Unmarshal(data, sd)
 	if err != nil {
 		return nil, err
