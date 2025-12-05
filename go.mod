@@ -2,14 +2,6 @@ module github.com/apache/dubbo-go-pixiu
 
 go 1.25
 
-// replace (
-// 	go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.26.0
-// 	go.opentelemetry.io/otel/exporters/otlp/otlptrace => go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.21.0
-// 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc => go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.21.0
-// 	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.21.0
-// 	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v1.21.0
-// )
-
 require (
 	dario.cat/mergo v1.0.1
 	dubbo.apache.org/dubbo-go/v3 v3.3.0
