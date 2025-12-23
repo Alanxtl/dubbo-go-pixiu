@@ -86,6 +86,7 @@ Numerous refactors, cleanups, and CI/build upgrades improve overall stability, m
 #### Project Layout & Maintenance
 
 * `pixiu-admin` migrated into main repository [#697](https://github.com/apache/dubbo-go-pixiu/pull/697)
+* `pixiu-api` migrated into main repository [#841](https://github.com/apache/dubbo-go-pixiu/pull/841)
 * `configcenter/` migrated to `pkg/` and legacy structures removed [#762](https://github.com/apache/dubbo-go-pixiu/pull/762)
 * Benchmark moved under `tools/benchmark` [#763](https://github.com/apache/dubbo-go-pixiu/pull/763)
 * Pixiu CLI relocated to `pkg/cmd` [#596](https://github.com/apache/dubbo-go-pixiu/pull/596)
@@ -161,6 +162,7 @@ Special thanks to all contributors for their efforts in improving `dubbo-go-pixi
 @Alanxtl
 @baerwang
 @Chen-BUPT
+@everfid-ever
 @FoghostCn
 @KamToHung
 @ma642
